@@ -1,4 +1,4 @@
-from flask import flash
+from flask import flash, Blueprint, render_template, render_template_string
 from flask.ext.plugins import Plugin
 from hooks import hooks
 
@@ -14,6 +14,21 @@ def inject_hello_world():
     return "<h1>Hello World Injected</h1>"
 
 
+def inject_navigation_link():
+    return render_template_string(
+        """
+            <li><a href="{{ url_for('hello.index') }}">Hello</a></li>
+        """)
+
+
+hello = Blueprint("hello", __name__, template_folder="templates")
+
+
+@hello.route("/")
+def index():
+    return render_template("hello.html")
+
+
 class HelloWorld(Plugin):
 
     name = "Hello World Plugin"
@@ -27,13 +42,20 @@ class HelloWorld(Plugin):
 
     version = __version__
 
+    def setup(self):
+        self.register_blueprint(hello, url_prefix="/hello")
+
     def enable(self):
         hooks.add("after_navigation", hello_world)
         hooks.add("tmpl_before_content", inject_hello_world)
+        hooks.add("tmpl_navigation_last", inject_navigation_link)
 
     def disable(self):
+        # there is no way to unregister blueprints
+        # you need to restart your application to unregister the blueprint
         hooks.remove("after_navigation", hello_world)
         hooks.remove("tmpl_before_content", inject_hello_world)
+        hooks.remove("tmpl_navigation_last", inject_navigation_link)
 
     def install(self):
         pass

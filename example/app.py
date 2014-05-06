@@ -1,5 +1,5 @@
-from flask import Flask, render_template
-from flask.ext.plugins import PluginManager, get_plugins_list
+from flask import Flask, render_template, redirect, url_for
+from flask.ext.plugins import PluginManager, get_plugins_list, get_plugin
 from hooks import hooks
 
 # Default Settings
@@ -11,7 +11,7 @@ app.config.from_object(__name__)
 
 # Initialize the plugin manager
 plugin_manager = PluginManager(app)
-plugin_manager.enable_plugins()
+plugin_manager.setup_plugins()
 
 # to be able to also run hooks in our templates, we need to add the hooks
 # manager to jinja's globals.
@@ -23,6 +23,20 @@ def index():
     hooks.call("after_navigation")
 
     return render_template("index.html", plugins=get_plugins_list())
+
+
+@app.route("/disable/<plugin>")
+def disable(plugin):
+    plugin = get_plugin(plugin)
+    plugin_manager.disable_plugins([plugin])
+    return redirect(url_for("index"))
+
+
+@app.route("/enable/<plugin>")
+def enable(plugin):
+    plugin = get_plugin(plugin)
+    plugin_manager.enable_plugins([plugin])
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":

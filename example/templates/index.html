@@ -7,8 +7,11 @@
   {% for plugin in plugins %}
     <b>{{ plugin.name }}</b> by {{ plugin.author }} <br />
     <i>{{ plugin.description }}</i> <br />
-    {{ plugin.license }}
+    {{ plugin.license }}</br>
 
+    <a href="{{ url_for('disable', plugin=plugin.name) }}">Disable</a> <br />
+    <a href="{{ url_for('enable', plugin=plugin.name) }}">Enable</a>
+    (<small>The Blueprint is still accessible via /hello because a blueprint cannot be unregistered _and_ needs to be registered before the app is serving requests.</small>)
   {% endfor %}
   <div class="starter-template">
     <h1>Bootstrap starter template</h1>
