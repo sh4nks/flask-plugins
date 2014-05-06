@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+  {{ hooks.call("tmpl_before_content") | safe }}
+
+  {% for plugin in plugins %}
+    <b>{{ plugin.name }}</b> by {{ plugin.author }} <br />
+    <i>{{ plugin.description }}</i> <br />
+    {{ plugin.license }}
+
+  {% endfor %}
+  <div class="starter-template">
+    <h1>Bootstrap starter template</h1>
+    <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>
+  </div>
+
+{% endblock %}
