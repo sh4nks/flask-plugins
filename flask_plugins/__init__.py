@@ -10,30 +10,15 @@
 """
 import os
 from werkzeug.utils import import_string
-from flask import _request_ctx_stack
-
-
-stack = _request_ctx_stack
-
-
-class PluginError(Exception):
-    """Error class for all plugin errors."""
-    pass
+from flask import current_app
 
 
 def get_plugin(name):
-    ctx = stack.top
-    return ctx.app.plugin_manager.plugins[name]
+    return current_app.plugin_manager.plugins[name]
 
 
 def get_plugins_list():
-    ctx = stack.top
-    return ctx.app.plugin_manager.plugins.values()
-
-
-def _register_blueprint(blueprint, **kwargs):
-    ctx = stack.top
-    ctx.app.register_blueprint(blueprint, **kwargs)
+    return current_app.plugin_manager.plugins.values()
 
 
 class Plugin(object):
@@ -56,8 +41,15 @@ class Plugin(object):
     #: The version of the plugin"""
     version = "0.0.0"
 
+    def setup(self):
+        """This method is used to register all things that needs to be done
+        before the app is serving requests. A good example for that are
+        Blueprints.
+        """
+        pass
+
     def enable(self):
-        """Enable the plugin."""
+        """Enable the plugin. For example, registers the hooks."""
         raise NotImplementedError("{} has not implemented the "
                                   "enable method".format(self.name))
 
@@ -67,8 +59,8 @@ class Plugin(object):
                                   "disable method".format(self.name))
 
     def install(self):
-        """The plugin should specify here what needs to be installed.
-        For example, create the database and register the hooks."""
+        """The plugin should specify here what needs to be installed like the
+        the models. """
         raise NotImplementedError("{} has not implemented the "
                                   "install method".format(self.name))
 
@@ -81,10 +73,10 @@ class Plugin(object):
     # Some helpers
     def register_blueprint(self, blueprint, **kwargs):
         """Registers a blueprint."""
-        _register_blueprint(blueprint, **kwargs)
+        current_app.register_blueprint(blueprint, **kwargs)
 
     def create_table(self, model, db):
-        """Creates the table for the model
+        """Creates the relation for the model
 
         :param model: The Model which should be created
         :param db: The database instance.
@@ -93,7 +85,7 @@ class Plugin(object):
             model.__table__.create(bind=db.engine)
 
     def drop_table(self, model, db):
-        """Drops the table for the bounded model.
+        """Drops the relation for the bounded model.
 
         :param model: The model on which the table is bound.
         :param db: The database instance.
@@ -102,8 +94,6 @@ class Plugin(object):
 
     def create_all_tables(self, models, db):
         """A interface for creating all models specified in ``models``.
-        If no models are specified in that variable it will abort
-        with a exception.
 
         :param models: A list with models
         :param db: The database instance
@@ -113,8 +103,7 @@ class Plugin(object):
 
     def drop_all_tables(self, models, db):
         """A interface for dropping all models specified in the
-        variable ``models``. If no models are specified in that variable,
-        it will abort with an exception.
+        variable ``models``.
 
         :param models: A list with models
         :param db: The database instance.
@@ -212,6 +201,14 @@ class PluginManager(object):
 
         return self._found_plugins
 
+    def setup_plugins(self):
+        """Runs the setup for all plugins. It is recommended to run this
+        after the PluginManager has been initialized.
+        """
+        for plugin in self.plugins.values():
+            with self.app.app_context():
+                plugin().setup()
+
     def install_plugins(self, plugins=None):
         """Install all or selected plugins.
 
@@ -285,6 +282,9 @@ class HookManager(object):
         """Creates a new hook.
 
         :param name: The name of the hook.
+
+        :param hook: The Hook class. Can be overridden if needed. Defaults to
+                     Hook().
         """
         if name not in self.hooks:
             self.hooks[name] = hook or Hook()
@@ -312,7 +312,13 @@ class HookManager(object):
 
         :param name: The name of the hook.
         """
-        return self.hooks[name].call(*args, **kwargs)
+        if len(self.hooks[name].callbacks) > 0:
+            return self.hooks[name].call(*args, **kwargs)
+
+        # Return an empty string. This is neccessary if you are running
+        # template hooks because we don't want that "None" is printed in the
+        # templates.
+        return ""
 
 
 class Hook(object):
@@ -336,5 +342,3 @@ class Hook(object):
         """Runs all callbacks for the hook."""
         for callback in self.callbacks:
             return callback(*args, **kwargs)
-        else:
-            return
