@@ -9,7 +9,7 @@ extend your application without the need to modify your core code.
 
 # INSTALLATION
 
-First you need to install it. It is available at the [Python Package Index]().
+First you need to install it. It is available at the [Python Package Index](https://pypi.python.org/pypi/flask-plugins).
 
     pip install flask-plugins
 
