@@ -40,7 +40,7 @@ from setuptools import setup
 
 setup(
     name='flask-plugins',
-    version='1.0',
+    version='1.0.1',
     url='http://github.com/sh4nks/flask-plugins/',
     license='BSD',
     author='sh4nks',
