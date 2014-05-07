@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import importlib
 from werkzeug.utils import import_string
 from flask import current_app
 
@@ -189,9 +190,7 @@ class PluginManager(object):
                 plugin = ".".join([self.base_plugin_package, item])
 
                 # Same like from exammple.plugins.pluginname import __plugin__
-                tmp = __import__(
-                    plugin, globals(), locals(), ["__plugin__"], -1
-                )
+                tmp = importlib.import_module(plugin)
 
                 try:
                     plugin = "{}.{}".format(plugin, tmp.__plugin__)
