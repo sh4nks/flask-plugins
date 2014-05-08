@@ -1,6 +1,6 @@
 from flask import flash, Blueprint, render_template, render_template_string
-from flask.ext.plugins import Plugin
-from hooks import hooks
+from example.app import AppPlugin
+from example.hooks import hooks
 
 __plugin__ = "HelloWorld"
 __version__ = "1.0.0"
@@ -29,7 +29,7 @@ def index():
     return render_template("hello.html")
 
 
-class HelloWorld(Plugin):
+class HelloWorld(AppPlugin):
 
     name = "Hello World Plugin"
 

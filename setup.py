@@ -45,19 +45,24 @@ from setuptools import setup
 
 setup(
     name='Flask-Plugins',
-    version='1.0.1',
+    version='1.0.2',
     url='http://github.com/sh4nks/flask-plugins/',
     license='BSD',
     author='sh4nks',
     author_email='sh4nks7@gmail.com',
-    description='A Extension that makes it possible to create plugins in Flask.',
+    description=
+        'A Extension that makes it possible to create plugins in Flask.',
     long_description=__doc__,
     packages=['flask_plugins'],
     include_package_data=True,
     zip_safe=False,
     platforms='any',
     install_requires=[
-        'Flask',
+        'Flask>=0.6',
+    ],
+    test_suite='nose.collector',
+    tests_require=[
+        'nose>=1.0',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

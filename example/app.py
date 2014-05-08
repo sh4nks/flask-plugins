@@ -1,6 +1,15 @@
-from flask import Flask, render_template, redirect, url_for
-from flask.ext.plugins import PluginManager, get_plugins_list, get_plugin
-from hooks import hooks
+from flask import Flask, render_template, redirect, url_for, current_app
+from flask.ext.plugins import PluginManager, get_plugins_list, get_plugin, \
+    Plugin
+from example.hooks import hooks
+
+
+# to demonstrate how easy it is to create your own plugin class for your plugins
+class AppPlugin(Plugin):
+    def register_blueprint(self, blueprint, **kwargs):
+        """Registers a blueprint."""
+        current_app.register_blueprint(blueprint, **kwargs)
+
 
 # Default Settings
 SECRET_KEY = "this-key-is-not-secure"
