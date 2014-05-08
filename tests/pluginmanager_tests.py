@@ -36,7 +36,7 @@ class PluginManagerTests(unittest.TestCase):
         self.assertEqual(len(found_plugins), 2)
         expected_plugins = ['tests.plugins.test1.TestOnePlugin',
                             'tests.plugins.test2.TestTwoPlugin']
-        self.assertEquals(found_plugins, expected_plugins)
+        self.assertEquals(sorted(found_plugins), expected_plugins)
 
     def test_load_plugins(self):
         self.assertEquals(self.plugin_manager._plugins, None)
