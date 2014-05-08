@@ -60,7 +60,10 @@ class PluginManagerGetPlugins(unittest.TestCase):
         with self.app.test_request_context():
             plugins = get_plugins_list()
 
-        self.assertEquals(plugins, self.plugin_manager.plugins.values())
+        self.assertEquals(
+            set(plugins),
+            set(self.plugin_manager.plugins.values())
+        )
 
     def test_get_plugin(self):
         with self.app.test_request_context():
