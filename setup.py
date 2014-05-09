@@ -37,7 +37,7 @@ Resources
 `````````
 
 * `source <https://github.com/sh4nks/flask-plugins>`_
-* `docs <https://http://flask-plugins.readthedocs.org/en/latest>`_
+* `docs <https://flask-plugins.readthedocs.org/en/latest>`_
 * `issues <https://github.com/sh4nks/flask-plugins/issues>`_
 
 """
@@ -45,7 +45,7 @@ from setuptools import setup
 
 setup(
     name='Flask-Plugins',
-    version='1.0.3',
+    version='1.0.4',
     url='http://github.com/sh4nks/flask-plugins/',
     license='BSD',
     author='sh4nks',
