@@ -25,21 +25,27 @@ class HookManagerTests(unittest.TestCase):
         self.assertEqual(self.hooks.hooks['foo'].callbacks, [self.callback])
 
     def test_removes_callback(self):
-        cb_id = self.hooks.add('foo', self.callback)
-        self.hooks.remove('foo', cb_id)
+        callback = self.hooks.run_hook('foo', self.callback)
+        self.hooks.remove('foo', callback)
         self.assertEqual(self.hooks.hooks['foo'].callbacks, [])
 
-    def test_calls_callbacks(self):
+    def test_run_hook(self):
         self.hooks.add('foo', self.callback)
-        self.hooks.call('foo', 'bar', kwarg='foobar')
+        self.hooks.run_hook('foo', 'bar', kwarg='foobar')
         self.assertEqual(self.args, ('bar',))
         self.assertEqual(self.kwargs, {'kwarg': 'foobar'})
 
-    def test_call_returns_value_of_callbacks(self):
+    def test_run_template_hook(self):
         self.hooks.new('bar', Hook())
-        self.hooks.add('bar', lambda data: data + 1)
-        self.assertEqual(self.hooks.call('bar', 1), 2)
+        self.hooks.add('bar', lambda: "test")
+        self.assertEqual(self.hooks.run_template_hook('bar'), "test")
+        self.hooks.add('bar', lambda: "test")
+        self.assertEqual(self.hooks.run_template_hook('bar'), "testtest")
 
-    def test_call_hook_without_callbacks(self):
+    def test_run_hook_without_callbacks(self):
         self.hooks.new('foobar', Hook())
-        self.assertEqual(self.hooks.call('foobar'), "")
+        self.assertEqual(self.hooks.run_hook('foobar'), None)
+
+    def test_run_template_hook_without_callbacks(self):
+        self.hooks.new('foobar', Hook())
+        self.assertEqual(self.hooks.run_template_hook('foobar'), "")

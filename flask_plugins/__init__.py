@@ -260,7 +260,7 @@ class HookManager(object):
         def hello():
             do_stuff_here()
 
-            hooks.call("testHook")
+            hooks.run_hook("testHook")
 
             do_more_stuff_here()
     """
@@ -286,7 +286,7 @@ class HookManager(object):
 
         :param callback: The callback which should be added to the hook.
         """
-        return self.hooks[name].add(callback)
+        return self.hooks[name].add_callback(callback)
 
     def remove(self, name, callback):
         """Removes a callback from the hook.
@@ -295,19 +295,25 @@ class HookManager(object):
 
         :param callback: The callback which should be removed
         """
-        self.hooks[name].remove(callback)
+        self.hooks[name].remove_callback(callback)
 
-    def call(self, name, *args, **kwargs):
-        """Calls all callbacks from a named hook with the given arguments.
+    def run_hook(self, name, *args, **kwargs):
+        """Runs a hook with all registered callbacks and the given arguments.
 
         :param name: The name of the hook.
         """
         if len(self.hooks[name].callbacks) > 0:
-            return self.hooks[name].call(*args, **kwargs)
+            return self.hooks[name].call_callback(*args, **kwargs)
 
-        # Return an empty string. This is neccessary if you are running
-        # template hooks because we don't want that "None" is printed in the
-        # templates.
+    def run_template_hook(self, name, *args, **kwargs):
+        """Runs a template hook with all registered callbacks and the given
+        arguments.
+
+        :param name: The name of the hook.
+        """
+        if len(self.hooks[name].callbacks) > 0:
+            return self.hooks[name].call_template_callback(*args, **kwargs)
+
         return ""
 
 
@@ -317,18 +323,26 @@ class Hook(object):
     def __init__(self):
         self.callbacks = []
 
-    def add(self, callback):
+    def add_callback(self, callback):
         """Adds a callback to a hook"""
         if callback not in self.callbacks:
             self.callbacks.append(callback)
         return callback
 
-    def remove(self, callback):
+    def remove_callback(self, callback):
         """Removes a callback from a hook"""
         if callback in self.callbacks:
             self.callbacks.remove(callback)
 
-    def call(self, *args, **kwargs):
+    def call_callback(self, *args, **kwargs):
         """Runs all callbacks for the hook."""
         for callback in self.callbacks:
-            return callback(*args, **kwargs)
+            callback(*args, **kwargs)
+
+    def call_template_callback(self, *args, **kwargs):
+        """Runs all callbacks for the template hook."""
+        data = ""
+        for callback in self.callbacks:
+            data += callback(*args, **kwargs)
+
+        return data

@@ -2,7 +2,7 @@
 
 {% block content %}
 
-  {{ hooks.call("tmpl_before_content") | safe }}
+  {{ hooks.run_template_hook("tmpl_before_content") | safe }}
 
   {% for plugin in plugins %}
     <b>{{ plugin.name }}</b> by {{ plugin.author }} <br />

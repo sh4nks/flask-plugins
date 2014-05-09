@@ -10,8 +10,16 @@ def hello_world():
     flash("Hello World from {} Plugin".format(__plugin__), "success")
 
 
+def hello_world2():
+    flash("Hello World 2 from {} Plugin".format(__plugin__), "success")
+
+
 def inject_hello_world():
     return "<h1>Hello World Injected</h1>"
+
+
+def inject_hello_world2():
+    return "<h1>Hello World 2 Injected</h1>"
 
 
 def inject_navigation_link():
@@ -47,14 +55,22 @@ class HelloWorld(AppPlugin):
 
     def enable(self):
         hooks.add("after_navigation", hello_world)
+        hooks.add("after_navigation", hello_world2)
+
         hooks.add("tmpl_before_content", inject_hello_world)
+        hooks.add("tmpl_before_content", inject_hello_world2)
+
         hooks.add("tmpl_navigation_last", inject_navigation_link)
 
     def disable(self):
         # there is no way to unregister blueprints
         # you need to restart your application to unregister the blueprint
         hooks.remove("after_navigation", hello_world)
+        hooks.remove("after_navigation", hello_world2)
+
         hooks.remove("tmpl_before_content", inject_hello_world)
+        hooks.remove("tmpl_before_content", inject_hello_world2)
+
         hooks.remove("tmpl_navigation_last", inject_navigation_link)
 
     def install(self):
