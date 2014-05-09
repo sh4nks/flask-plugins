@@ -20,10 +20,12 @@ class PluginError(Exception):
 
 
 def get_plugin(name):
+    """Returns a plugin instance for the given name"""
     return current_app.plugin_manager.plugins[name]
 
 
 def get_plugins_list():
+    """Returns all plugins as a list"""
     return current_app.plugin_manager.plugins.values()
 
 
@@ -32,7 +34,7 @@ class Plugin(object):
     for the plugin hooks, creates or modifies additional relations or
     registers plugin specific thinks"""
 
-    #: The name of the plugin. This name is displayed in the admin panel
+    #: The name of the plugin.
     name = None
 
     #: The author of the plugin
@@ -44,35 +46,45 @@ class Plugin(object):
     #: A small description of the plugin.
     description = ""
 
-    #: The version of the plugin"""
+    #: The version of the plugin
     version = "0.0.0"
 
     def setup(self):  # pragma: no cover
         """This method is used to register all things that needs to be done
         before the app is serving requests. A good example for that are
-        Blueprints.
+        Blueprints. Those _must_ be registered before the app is serving
+        requests *and* they cannot be disabled at runtime, therefore you would
+        need to completly uninstall the plugin.
         """
         pass
 
     def enable(self):
-        """Enable the plugin. For example, registers the hooks."""
+        """Enables the things that can be enabled after the app has started.
+        A good example for this are ``hooks``. They can be enabled and disabled
+        anytime.
+        """
         raise NotImplementedError("{} has not implemented the "
                                   "enable method".format(self.name))
 
     def disable(self):
-        """Disable the plugin."""
+        """Disables all the things which were previously enabled by `enable()`.
+        A blueprint cannot be disabled.
+        """
         raise NotImplementedError("{} has not implemented the "
                                   "disable method".format(self.name))
 
     def install(self):
-        """The plugin should specify here what needs to be installed like the
-        the models. """
+        """Installs the things that must be installed in order to have a
+        fully and correctly working plugin. For example, something that needs
+        to be installed can be a relation and/or modify a existing relation.
+        """
         raise NotImplementedError("{} has not implemented the "
                                   "install method".format(self.name))
 
     def uninstall(self):
-        """Uninstalls the plugin and deletes the things that
-        the plugin has installed."""
+        """Uninstalls all the things which were previously installed by
+        `install()`. A Plugin must override this method.
+        """
         raise NotImplementedError("{} has not implemented the "
                                   "uninstall method".format(self.name))
 
