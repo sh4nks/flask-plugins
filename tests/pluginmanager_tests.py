@@ -34,11 +34,11 @@ class PluginManagerTests(unittest.TestCase):
     def test_find_plugins(self):
         found_plugins = self.plugin_manager.find_plugins()
         self.assertEqual(len(found_plugins), 2)
-        expected_plugins = ['tests.plugins.test1.TestOnePlugin',
-                            'tests.plugins.test2.TestTwoPlugin']
+        expected_plugins = ['TestOnePlugin', 'TestTwoPlugin']
         self.assertEquals(sorted(found_plugins), expected_plugins)
 
     def test_load_plugins(self):
+        self.plugin_manager._plugins = None
         self.assertEquals(self.plugin_manager._plugins, None)
 
         self.plugin_manager.load_plugins()
@@ -78,13 +78,12 @@ class PluginManagerOtherDirectoryTests(unittest.TestCase):
         self.app = Flask(__name__)
         self.app.config['TESTING'] = True
         self.plugin_manager = PluginManager()
-        self.plugin_manager.init_app(self.app, plugin_folder="plugs")
 
-    def test_iter_plugins(self):
+    def test_wrong_plugin(self):
         # should raise an exception because the plugin in the "plugs" folder
         # have set the __plugin__ variable not correctly.
         with self.assertRaises(PluginError):
-            self.plugin_manager.plugins
+            self.plugin_manager.init_app(self.app, plugin_folder="plugs")
 
 
 class PluginManagerOnePluginTests(unittest.TestCase):
@@ -101,16 +100,6 @@ class PluginManagerOnePluginTests(unittest.TestCase):
         plugin.setup()
         self.assertTrue(plugin.setup_called)
 
-    def test_plugin_enabled(self):
-        plugin = self.plugin_manager.plugins["Test One"]
-        plugin.enable()
-        self.assertTrue(plugin.enable_called)
-
-    def test_plugin_disabled(self):
-        plugin = self.plugin_manager.plugins["Test One"]
-        plugin.disable()
-        self.assertTrue(plugin.disable_called)
-
     def test_plugin_install(self):
         plugin = self.plugin_manager.plugins["Test One"]
         plugin.install()
@@ -120,66 +109,3 @@ class PluginManagerOnePluginTests(unittest.TestCase):
         plugin = self.plugin_manager.plugins["Test One"]
         plugin.uninstall()
         self.assertTrue(plugin.uninstall_called)
-
-
-class PluginManagerAllPluginsTests(unittest.TestCase):
-    """Tests the plugin_manager.install_plugins(),... methods"""
-    def setUp(self):
-        self.app = Flask(__name__)
-        self.app.config['TESTING'] = True
-        self.plugin_manager = PluginManager()
-        self.plugin_manager.init_app(self.app)
-        self.plugin_manager.load_plugins()
-
-    def test_plugins_all_enabled(self):
-        self.plugin_manager.enable_plugins()
-        self.assertEquals(self.plugin_manager._enabled_plugins,
-                          set(self.plugin_manager.plugins.values()))
-
-    def test_plugins_all_disabled(self):
-        # just to be sure that every plugin is enabled
-        self.plugin_manager.enable_plugins()
-
-        # now disable all plugins
-        self.plugin_manager.disable_plugins()
-
-        self.assertEquals(self.plugin_manager._enabled_plugins, set())
-
-    def test_plugins_all_install(self):
-        self.plugin_manager.install_plugins()
-
-        self.assertEquals(self.plugin_manager._installed_plugins,
-                          set(self.plugin_manager.plugins.values()))
-
-    def test_plugins_all_uninstall(self):
-        self.plugin_manager.install_plugins()
-
-        self.plugin_manager.uninstall_plugins()
-
-        self.assertEquals(self.plugin_manager._installed_plugins, set())
-
-    ##########
-    # now test this with a single plugin
-    def test_plugins_single_enabled(self):
-        plugin = self.plugin_manager.plugins["Test One"]
-        self.plugin_manager.enable_plugins([plugin])
-
-        self.assertEquals(len(self.plugin_manager._enabled_plugins), 1)
-
-    def test_plugins_single_disabled(self):
-        plugin = self.plugin_manager.plugins["Test One"]
-        self.plugin_manager.disable_plugins([plugin])
-
-        self.assertEquals(len(self.plugin_manager._enabled_plugins), 0)
-
-    def test_plugins_single_install(self):
-        plugin = self.plugin_manager.plugins["Test One"]
-        self.plugin_manager.install_plugins([plugin])
-
-        self.assertEquals(len(self.plugin_manager._installed_plugins), 1)
-
-    def test_plugins_single_uninstall(self):
-        plugin = self.plugin_manager.plugins["Test One"]
-        self.plugin_manager.uninstall_plugins([plugin])
-
-        self.assertEquals(len(self.plugin_manager._installed_plugins), 0)

@@ -5,14 +5,20 @@
 
     The Plugin class that every plugin should implement
 
+    The metadata part (with the info.json file) is inspired by Flask-Themes2
+    and the EventManager is taken from Zine.
+
     :copyright: (c) 2014 by the FlaskBB Team.
     :license: BSD, see LICENSE for more details.
 """
 import os
 import importlib
+from collections import deque
+from werkzeug import cached_property
 from werkzeug.utils import import_string
-from flask import current_app
-from ._compat import itervalues
+from jinja2 import Markup
+from flask import current_app, json
+from ._compat import itervalues, iteritems
 
 
 class PluginError(Exception):
@@ -34,62 +40,91 @@ class Plugin(object):
     for the plugin hooks, creates or modifies additional relations or
     registers plugin specific thinks"""
 
-    #: The name of the plugin.
-    name = None
+    def __init__(self, path):
+        #: The plugin's root path. All the files in the plugin are under this
+        #: path.
+        with open(os.path.join(path, 'info.json')) as fd:
+            self.info = i = json.load(fd)
 
-    #: The author of the plugin
-    author = ""
+        #: The plugin's name, as given in info.json. This is the human
+        #: readable name.
+        self.name = i['name']
 
-    #: The license of the plugin
-    license = ""
+        #: The plugin's identifier. This is an actual Python identifier,
+        #: and in most situations should match the name of the directory the
+        #: plugin is in.
+        self.identifier = i['identifier']
 
-    #: A small description of the plugin.
-    description = ""
+        #: The human readable description. This is the default (English)
+        #: version.
+        self.description = i.get('description')
 
-    #: The version of the plugin
-    version = "0.0.0"
+        #: This is a dictionary of localized versions of the description.
+        #: The language codes are all lowercase, and the ``en`` key is
+        #: preloaded with the base description.
+        self.localized_desc = dict(
+            (k.split('_', 1)[1].lower(), v) for k, v in i.items()
+            if k.startswith('description_')
+        )
+        self.localized_desc.setdefault('en', self.description)
+
+        #: The author's name, as given in info.json. This may or may not
+        #: include their email, so it's best just to display it as-is.
+        self.author = i['author']
+
+        #: A short phrase describing the license, like "GPL", "BSD", "Public
+        #: Domain", or "Creative Commons BY-SA 3.0".
+        self.license = i.get('license')
+
+        #: A URL pointing to the license text online.
+        self.license_url = i.get('license_url')
+
+        #: The URL to the plugin's or author's Web site.
+        self.website = i.get('website')
+
+        #: The plugin's version string.
+        self.version = i.get('version')
+
+        #: Any additional options. These are entirely application-specific,
+        #: and may determine other aspects of the application's behavior.
+        self.options = i.get('options', {})
+
+    @cached_property
+    def license_text(self):
+        """
+        The contents of the theme's license.txt file, if it exists. This is
+        used to display the full license text if necessary. (It is `None` if
+        there was not a license.txt.)
+        """
+        lt_path = os.path.join(self.path, 'license.txt')
+        if os.path.exists(lt_path):
+            with open(lt_path) as fd:
+                return fd.read()
+        else:
+            return None
 
     def setup(self):  # pragma: no cover
-        """This method is used to register all things that needs to be done
-        before the app is serving requests. A good example for that are
-        Blueprints. Those _must_ be registered before the app is serving
-        requests *and* they cannot be disabled at runtime, therefore you would
-        need to completly uninstall the plugin.
+        """This method is used to register all things that the plugin wants to
+        register.
         """
         pass
 
-    def enable(self):
-        """Enables the things that can be enabled after the app has started.
-        A good example for this are ``hooks``. They can be enabled and disabled
-        anytime.
-        """
-        raise NotImplementedError("{} has not implemented the "
-                                  "enable method".format(self.name))
-
-    def disable(self):
-        """Disables all the things which were previously enabled by `enable()`.
-        A blueprint cannot be disabled.
-        """
-        raise NotImplementedError("{} has not implemented the "
-                                  "disable method".format(self.name))
-
-    def install(self):
+    def install(self):  # pragma: no cover
         """Installs the things that must be installed in order to have a
         fully and correctly working plugin. For example, something that needs
         to be installed can be a relation and/or modify a existing relation.
         """
-        raise NotImplementedError("{} has not implemented the "
-                                  "install method".format(self.name))
+        pass
 
-    def uninstall(self):
+    def uninstall(self):  # pragma: no cover
         """Uninstalls all the things which were previously installed by
         `install()`. A Plugin must override this method.
         """
-        raise NotImplementedError("{} has not implemented the "
-                                  "uninstall method".format(self.name))
+        pass
 
 
 class PluginManager(object):
+    """Collects all Plugins and maps the metadata to the plugin"""
 
     def __init__(self, app=None, **kwargs):
         """Initializes the PluginManager. It is also possible to initialize the
@@ -98,9 +133,7 @@ class PluginManager(object):
             plugin_manager = PluginManager()
             plugin_manager.init_app(app)
 
-        :param app: The flask application. It is needed to do plugin
-                    specific things like registering additional views or
-                    doing things where the application context is needed.
+        :param app: The flask application.
 
         :param plugin_folder: The plugin folder where the plugins resides.
 
@@ -111,19 +144,16 @@ class PluginManager(object):
         self._plugins = None
 
         # All found plugins
-        self._found_plugins = []
-
-        # TODO: Use a datastore to store the status of the plugins
-        # and fallback to a simple memory store if no datastore is choosen
-        self._enabled_plugins = set()
-        self._installed_plugins = set()
+        self._found_plugins = dict()
 
         if app is not None:
             self.init_app(app, **kwargs)
 
-    def init_app(self, app, base_app_folder=None,
-                 plugin_folder="plugins"):
+    def init_app(self, app, base_app_folder=None, plugin_folder="plugins"):
+        self._event_manager = EventManager(app)
+
         app.plugin_manager = self
+        app.jinja_env.globals["emit_event"] = self._event_manager.template_emit
 
         self.app = app
 
@@ -134,6 +164,8 @@ class PluginManager(object):
         self.base_plugin_package = ".".join(
             [base_app_folder, plugin_folder]
         )
+
+        self.setup_plugins()
 
     @property
     def plugins(self):
@@ -149,32 +181,34 @@ class PluginManager(object):
         via self.plugins.
         """
         self._plugins = {}
-        for plugin_class in self.iter_plugins():
-            plugin_instance = plugin_class()
-            self._plugins[plugin_instance.name] = plugin_instance
+        for plugin_name, plugin_package in iteritems(self.find_plugins()):
 
-    def iter_plugins(self):
-        """Iterates over all possible plugins found in ``self.find_plugins()``,
-        imports them and if the import succeeded it will yield the plugin class.
-        """
-        for plugin in self.find_plugins():
             try:
-                plugin_class = import_string(plugin)
+                plugin_class = import_string(
+                    "{}.{}".format(plugin_package, plugin_name)
+                )
             except ImportError:
                 raise PluginError(
                     "Couldn't import {} Plugin. Please check if the __plugin__ "
-                    "variable is set correctly. Skipping...".format(plugin)
+                    "variable is set correctly.".format(plugin_name)
                 )
 
-            if plugin_class is not None:
-                yield plugin_class
+            plugin_path = os.path.join(
+                self.plugin_folder,
+                os.path.basename(plugin_package.replace(".", "/"))
+            )
+
+            plugin_instance = plugin_class(plugin_path)
+            self._plugins[plugin_instance.name] = plugin_instance
 
     def find_plugins(self):
         """Find all possible plugins in the plugin folder."""
         for item in os.listdir(self.plugin_folder):
-            if os.path.isdir(os.path.join(self.plugin_folder, item)) and \
-                    os.path.exists(
-                        os.path.join(self.plugin_folder, item, "__init__.py")):
+            if os.path.isdir(os.path.join(self.plugin_folder, item)) \
+                    and os.path.exists(
+                        os.path.join(self.plugin_folder, item, "__init__.py")) \
+                    and not os.path.exists(
+                        os.path.join(self.plugin_folder, item, "DISABLED")):
 
                 plugin = ".".join([self.base_plugin_package, item])
 
@@ -182,8 +216,7 @@ class PluginManager(object):
                 tmp = importlib.import_module(plugin)
 
                 try:
-                    plugin = "{}.{}".format(plugin, tmp.__plugin__)
-                    self._found_plugins.append(plugin)
+                    self._found_plugins[tmp.__plugin__] = "{}".format(plugin)
                 except AttributeError:
                     pass
 
@@ -204,11 +237,8 @@ class PluginManager(object):
                         it will try to install all plugins.
         """
         for plugin in plugins or itervalues(self.plugins):
-            if plugin not in self._installed_plugins:
-                with self.app.app_context():
-                    plugin.install()
-
-                self._installed_plugins.add(plugin)
+            with self.app.app_context():
+                plugin.install()
 
     def uninstall_plugins(self, plugins=None):
         """Uninstall the plugin.
@@ -217,144 +247,107 @@ class PluginManager(object):
                         it will try to uninstall all plugins.
         """
         for plugin in plugins or itervalues(self.plugins):
-            if plugin in self._installed_plugins:
-                with self.app.app_context():
-                    plugin.uninstall()
-
-                self._installed_plugins.remove(plugin)
-
-    def enable_plugins(self, plugins=None):
-        """Enable all or selected plugins.
-
-        :param plugins: An iterable with plugins. If no plugins are passed
-                        it will try to enable all plugins.
-        """
-        for plugin in plugins or itervalues(self.plugins):
-            # check if the plugin is already enabled
-            if plugin not in self._enabled_plugins:
-                with self.app.app_context():
-                    plugin.enable()
-
-                self._enabled_plugins.add(plugin)
-
-    def disable_plugins(self, plugins=None):
-        """Disable all or selected plugins.
-
-        :param plugins: An iterable with plugins. If no plugins are passed
-                        it will try to disable all plugins.
-        """
-        for plugin in plugins or itervalues(self.plugins):
-            # only disable a plugin if it is enabled
-            if plugin in self._enabled_plugins:
-                with self.app.app_context():
-                    plugin.disable()
-
-                self._enabled_plugins.remove(plugin)
+            with self.app.app_context():
+                plugin.uninstall()
 
 
-class HookManager(object):
-    """Manages all available hooks.
+def connect_event(event, callback, position='after'):
+    """Connect a callback to an event.  Per default the callback is
+    appended to the end of the handlers but handlers can ask for a higher
+    privilege by setting `position` to ``'before'``.
 
-    A new hook can be created like this::
+    Example usage::
 
-        hooks.new("testHook")
+        def on_before_metadata_assembled(metadata):
+            metadata.append('<!-- IM IN UR METADATA -->')
 
-    To add a callback to the hook you need to do that::
+        # And in your setup() method do this:
+            connect_event('before-metadata-assembled',
+                           on_before_metadata_assembled)
+    """
+    current_app.plugin_manager._event_manager.connect(event, callback, position)
 
-        hooks.add("testHook", test_callback)
 
-    If you want to use the last method, you'd also need to pass a callback over
-    to the ``add`` method.
-    Then you might want to add somewhere in your code the ``caller`` where all
-    registered callbacks for the specified hook are going to be called.
-    For example::
+def emit_event(event, *args, **kwargs):
+    """Emit a event and return a list of event results.  Each called
+    function contributes one item to the returned list.
 
-        def hello():
-            do_stuff_here()
+    This is equivalent to the following call to :func:`iter_listeners`::
 
-            hooks.run_hook("testHook")
+        result = []
+        for listener in iter_listeners(event):
+            result.append(listener(*args, **kwargs))
+    """
+    return [x(*args, **kwargs) for x in
+            current_app.plugin_manager._event_manager.iter(event)]
 
-            do_more_stuff_here()
+
+def iter_listeners(event):
+    """Return an iterator for all the listeners for the event provided."""
+    return current_app.plugin_manager._event_manager.iter(event)
+
+
+class EventManager(object):
+    """Helper class that handles event listeners and event emitting.
+
+    This is *not* a public interface. Always use the `emit_event` or
+    `connect_event` or the `iter_listeners` functions to access it.
     """
 
-    def __init__(self):
-        self.hooks = {}
+    def __init__(self, app):
+        self.app = app
+        self._listeners = {}
+        self._last_listener = 0
 
-    def new(self, name, hook=None):
-        """Creates a new hook.
+    def connect(self, event, callback, position='after'):
+        """Connect a callback to an event."""
+        assert position in ('before', 'after'), 'invalid position'
+        listener_id = self._last_listener
+        event = intern(event)
+        if event not in self._listeners:
+            self._listeners[event] = deque([callback])
+        elif position == 'after':
+            self._listeners[event].append(callback)
+        elif position == 'before':
+            self._listeners[event].appendleft(callback)
+        self._last_listener += 1
+        return listener_id
 
-        :param name: The name of the hook.
+    def remove(self, listener_id):
+        """Remove a callback again."""
+        for event in self._listeners:
+            try:
+                event.remove(listener_id)
+            except ValueError:
+                pass
 
-        :param hook: The Hook class. Can be overridden if needed. Defaults to
-                     Hook().
-        """
-        if name not in self.hooks:
-            self.hooks[name] = hook or Hook()
+    def iter(self, event):
+        """Return an iterator for all listeners of a given name."""
+        if event not in self._listeners:
+            return iter(())
+        return iter(self._listeners[event])
 
-    def add(self, name, callback):
-        """Adds a callback to the hook.
-
-        :param name: The name of the hook.
-
-        :param callback: The callback which should be added to the hook.
-        """
-        return self.hooks[name].add_callback(callback)
-
-    def remove(self, name, callback):
-        """Removes a callback from the hook.
-
-        :param name: The name of the hook.
-
-        :param callback: The callback which should be removed
-        """
-        self.hooks[name].remove_callback(callback)
-
-    def run_hook(self, name, *args, **kwargs):
-        """Runs a hook with all registered callbacks and the given arguments.
-
-        :param name: The name of the hook.
-        """
-        if len(self.hooks[name].callbacks) > 0:
-            return self.hooks[name].call_callback(*args, **kwargs)
-
-    def run_template_hook(self, name, *args, **kwargs):
-        """Runs a template hook with all registered callbacks and the given
-        arguments.
-
-        :param name: The name of the hook.
-        """
-        if len(self.hooks[name].callbacks) > 0:
-            return self.hooks[name].call_template_callback(*args, **kwargs)
-
-        return ""
+    def template_emit(self, event, *args, **kwargs):
+        """Emits events for the template context."""
+        results = []
+        for f in self.iter(event):
+            rv = f(*args, **kwargs)
+            if rv is not None:
+                results.append(rv)
+        return TemplateEventResult(results)
 
 
-class Hook(object):
-    """Represents a hook."""
+class TemplateEventResult(list):
+    """A list subclass for results returned by the event listener that
+    concatenates the results if converted to string, otherwise it works
+    exactly like any other list.
+    """
 
-    def __init__(self):
-        self.callbacks = []
+    def __init__(self, items):
+        list.__init__(self, items)
 
-    def add_callback(self, callback):
-        """Adds a callback to a hook"""
-        if callback not in self.callbacks:
-            self.callbacks.append(callback)
-        return callback
+    def __unicode__(self):
+        return Markup(u''.join(map(unicode, self)))
 
-    def remove_callback(self, callback):
-        """Removes a callback from a hook"""
-        if callback in self.callbacks:
-            self.callbacks.remove(callback)
-
-    def call_callback(self, *args, **kwargs):
-        """Runs all callbacks for the hook."""
-        for callback in self.callbacks:
-            callback(*args, **kwargs)
-
-    def call_template_callback(self, *args, **kwargs):
-        """Runs all callbacks for the template hook."""
-        data = ""
-        for callback in self.callbacks:
-            data += callback(*args, **kwargs)
-
-        return data
+    def __str__(self):
+        return Markup(unicode(self).encode('utf-8'))

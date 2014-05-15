@@ -1,0 +1,8 @@
+{
+    "identifier": "test2",
+    "name": "Test Two",
+    "author": "sh4nks",
+    "license": "BSD",
+    "description": "Another Test Plugin.",
+    "version": "1.0.0"
+}

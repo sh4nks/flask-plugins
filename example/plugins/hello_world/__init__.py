@@ -1,6 +1,6 @@
 from flask import flash, Blueprint, render_template, render_template_string
+from flask.ext.plugins import connect_event
 from example.app import AppPlugin
-from example.hooks import hooks
 
 __plugin__ = "HelloWorld"
 __version__ = "1.0.0"
@@ -39,42 +39,13 @@ def index():
 
 class HelloWorld(AppPlugin):
 
-    name = "Hello World Plugin"
-
-    description = ("This plugin gives a quick insight on how you can write "
-                   "plugins with Flask-Plugins.")
-
-    author = "sh4nks"
-
-    license = "BSD License. See LICENSE file for more information."
-
-    version = __version__
-
     def setup(self):
         self.register_blueprint(hello, url_prefix="/hello")
 
-    def enable(self):
-        hooks.add("after_navigation", hello_world)
-        hooks.add("after_navigation", hello_world2)
+        connect_event("after_navigation", hello_world)
+        connect_event("after_navigation", hello_world2)
 
-        hooks.add("tmpl_before_content", inject_hello_world)
-        hooks.add("tmpl_before_content", inject_hello_world2)
+        connect_event("tmpl_before_content", inject_hello_world)
+        connect_event("tmpl_before_content", inject_hello_world2)
 
-        hooks.add("tmpl_navigation_last", inject_navigation_link)
-
-    def disable(self):
-        # there is no way to unregister blueprints
-        # you need to restart your application to unregister the blueprint
-        hooks.remove("after_navigation", hello_world)
-        hooks.remove("after_navigation", hello_world2)
-
-        hooks.remove("tmpl_before_content", inject_hello_world)
-        hooks.remove("tmpl_before_content", inject_hello_world2)
-
-        hooks.remove("tmpl_navigation_last", inject_navigation_link)
-
-    def install(self):
-        pass
-
-    def uninstall(self):
-        pass
+        connect_event("tmpl_navigation_last", inject_navigation_link)

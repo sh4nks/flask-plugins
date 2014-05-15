@@ -1,9 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, current_app
 
 from flask.ext.plugins import PluginManager, get_plugins_list, get_plugin, \
-    Plugin
-
-from example.hooks import hooks
+    Plugin, emit_event
 
 
 # to demonstrate how easy it is to create your own plugin class for your plugins
@@ -22,17 +20,11 @@ app.config.from_object(__name__)
 
 # Initialize the plugin manager
 plugin_manager = PluginManager(app)
-plugin_manager.setup_plugins()
-
-
-# to be able to also run hooks in our templates, we need to add the hooks
-# manager to jinja's globals.
-app.jinja_env.globals.update(hooks=hooks)
 
 
 @app.route("/")
 def index():
-    hooks.run_hook("after_navigation")
+    emit_event("after_navigation")
 
     return render_template("index.html", plugins=get_plugins_list())
 

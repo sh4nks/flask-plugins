@@ -30,6 +30,7 @@ like shown in the examples below.
 .. sourcecode:: text
 
     my_plugin
+    ├── info.json
     └── __init__.py
 
 
@@ -38,7 +39,9 @@ A more complex plugin could look like this:
 .. sourcecode:: text
 
     my_plugin
-    ├── __init__.py
+    ├── info.json                Contains the Plugin's metadata
+    ├── license.txt              The full license text of your plugin
+    ├── __init__.py              The plugin's main class is located here
     ├── views.py
     ├── models.py
     ├── forms.py
@@ -48,13 +51,22 @@ A more complex plugin could look like this:
         └── myplugin.html
 
 
+The only way to disable a plugin without removing is, to add a ``DISABLED``
+in the plugin's root folder. You need to reload your application in order to
+to have the plugin fully disabled. A disabled plugin could look like this::
+
+    my_plugin
+    ├── DISABLED            # Just add a empty file named "DISABLED" to disable a plugin
+    ├── info.json
+    └── __init__.py
+
+
 To add the extension to your application you simply can do this::
 
     from flask.ext.plugins import PluginManager
 
     plugin_manager = PluginManager(app)
 
-    plugin_manager.setup_plugins()
 
 or if you are using the factory pattern::
 
@@ -62,8 +74,6 @@ or if you are using the factory pattern::
 
     plugin_manager = PluginManager()
     plugin_manager.init_app(app)
-
-    plugin_manager.setup_plugins()
 
 
 The Plugin Loader looks in the ``__init__.py`` for a ``__plugin__`` variable
@@ -83,41 +93,40 @@ the ``plugin_manager.plugins`` property. To get only one specific plugin,
 you can use ``get_plugin(name)``
 
 
-Hooks
------
+To make use of the ``install`` and ``uninstall`` methods, you need to implement
+them by yourself in your applications core because we are not bound to a
+database. **TODO:** Provide a example
 
-We also provide a simply hook system. It allows you to extend your existing
-code without modifying it. To get started you need to initialize the
-``HookManager``::
 
-    from flask.ext.plugins import HookManager, Hook()
+Events
+------
 
-    hooks = HookManager()
+We also provide a Event system out of the box. It is up to you if you want to
+extend your application with events. If you decide to use it, than you
+just need to add in specific places in your code the :func:`emit_event` function
+with the name of your event and optionally the data which can be modified by a
+plugin. After you have initilized the :class:`PluginManager` you can do this::
 
-now you can create a new ``Hook`` which can than be used by your plugins::
+    from flask.ext.plugins import emit_event
 
-    # creating a hello_world hook
-    hooks.new("hello_world")
+    emit_event("before-data-rendered", data)
 
-and finally you can add a callback to your newly created hook::
+and than you can add a callback (e.q. in your plugin setup method)
+to your newly created event::
 
-    def print_hello():
-        return "Hello World"
+    from flask.ext.plugins import connect_event
 
-    hooks.add("hello_world", print_hello)
+    def do_before_data_rendered(data):
+        return "returning modified data"
 
-To run your hooks, you simply need to add on specific places this::
+    connect_event("before-data-rendered", do_before_data_rendered)
 
-    hooks.run_hook("hello_world")
 
-and if you also want to use the hooks in your template, you have to update
-jinja's global context and then you should be able to run the hooks::
+Of course you also do that in your templates - For this we have already added
+:func:`emit_event` to your jinja env context. So you just need to call it in the
+template::
 
-    app.jinja_env.globals.update(hooks=hooks)
-
-In the template you need to use the ``run_template_hook`` method::
-
-    {{ hooks.run_template_hook("some_template_hook") | safe }}
+    {{ emit_event("before-data-rendered") }}
 
 
 
@@ -129,26 +138,11 @@ The Plugin Class
 ================
 
 Every ``Plugin`` should implement this class. It is used to get plugin specific
-data (later, I want to use for the metadata a ``.json`` file or something like
-this) and to call the methods which are stated below.
+data and the :class:`PluginManager` tries call the methods which are stated below.
 
 .. autoclass:: Plugin
 
-  .. autoattribute:: name
-
-  .. autoattribute:: description
-
-  .. autoattribute:: author
-
-  .. autoattribute:: license
-
-  .. autoattribute:: version
-
   .. automethod:: setup
-
-  .. automethod:: enable
-
-  .. automethod:: disable
 
   .. automethod:: install
 
@@ -164,22 +158,8 @@ For a fully working example check out the example app
 A HelloWorld Plugin could look like this::
 
     class HelloWorld(Plugin):
-        name = "Hello World Plugin"
-        description = "Flashes Hello World"
-        author = "John Doe"
-        license = "BSD"
-        version = "1.3.1"
-
         def setup(self):
-            register_blueprint_here()
-
-        def enable(self):
-            # add a callback to the index hook
-            hooks.add("index", flash_hello_world)
-
-        def disable(self):
-            # remove the previously added callback from the index hook
-            hooks.remove("index", flash_hello_world)
+            connect_event(before-data-rendered, do_before_data_rendered)
 
         def install(self):
             # there is nothing to install
@@ -188,6 +168,9 @@ A HelloWorld Plugin could look like this::
         def uninstall(self):
             # ... and nothing to uninstall
             pass
+
+
+Looks simple, eh? :)
 
 
 API Documentation
@@ -207,15 +190,17 @@ Plugin System
 .. autofunction:: get_plugin
 
 
-Hook System
------------
+Event System
+------------
 
-.. autoclass:: Hook
+.. autoclass:: EventManager
   :members:
   :special-members:
   :exclude-members: __weakref__
 
-.. autoclass:: HookManager
-  :members:
-  :special-members:
-  :exclude-members: __weakref__
+
+.. autofunction:: emit_event
+
+.. autofunction:: connect_event
+
+.. autofunction:: iter_listeners

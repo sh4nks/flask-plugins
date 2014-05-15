@@ -14,12 +14,6 @@ class TestOnePlugin(Plugin):
     def setup(self):
         self.setup_called = True
 
-    def enable(self):
-        self.enable_called = True
-
-    def disable(self):
-        self.disable_called = True
-
     def install(self):
         self.install_called = True
 

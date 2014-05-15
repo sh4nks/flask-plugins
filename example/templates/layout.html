@@ -50,7 +50,7 @@
         <div class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li><a href="{{ url_for('index') }}">Home</a></li>
-            {{ hooks.run_template_hook("tmpl_navigation_last") | safe }}
+            {{ emit_event("tmpl_navigation_last") }}
           </ul>
         </div><!--/.nav-collapse -->
       </div>

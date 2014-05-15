@@ -10,15 +10,3 @@ class TestTwoPlugin(Plugin):
     author = "test2"
     license = "BSD"
     version = "0.1"
-
-    def enable(self):
-        pass
-
-    def disable(self):
-        pass
-
-    def install(self):
-        pass
-
-    def uninstall(self):
-        pass
