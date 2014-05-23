@@ -45,7 +45,7 @@ from setuptools import setup
 
 setup(
     name='Flask-Plugins',
-    version='1.2',
+    version='1.3',
     url='http://github.com/sh4nks/flask-plugins/',
     license='BSD',
     author='sh4nks',
@@ -71,7 +71,6 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ]
