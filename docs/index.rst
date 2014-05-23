@@ -3,17 +3,9 @@ Flask-Plugins
 =============
 .. currentmodule:: flask.ext.plugins
 
-Flask-Plugins provides an easy way to create plugins and add hooks for your
-application. It is also possible to create Hooks which can than be used to
+Flask-Plugins provides an easy way to create plugins for your
+application. It is also possible to create Events which can than be used to
 extend your application without the need to modify your core code.
-
-
-**I would love to have some feedback about this extension :)**
-
-I'm currently not really satisfied with the current state of the code
-but it works. When I have a little bit more time, I want to investigate how
-to use a data store, to save the current status of the plugin. For example,
-if the plugin is installed or uninstalled and so on..
 
 
 .. contents::
@@ -52,7 +44,7 @@ A more complex plugin could look like this:
 
 
 The only way to disable a plugin without removing is, to add a ``DISABLED``
-in the plugin's root folder. You need to reload your application in order to
+file in the plugin's root folder. You need to reload your application in order
 to have the plugin fully disabled. A disabled plugin could look like this::
 
     my_plugin
@@ -78,24 +70,25 @@ or if you are using the factory pattern::
 
 The Plugin Loader looks in the ``__init__.py`` for a ``__plugin__`` variable
 which specifies the Plugin Class. If no such variable exists, the loader will
-just go on to the next plugin (if any) and trying to load them. But if a wrong
+just go on to the next plugin (if any) and try to load them. But if a wrong
 plugin class is specified it will raise a exception.
 
-So for example, the ``__plugin__`` var for a ``HelloWorld`` plugin class would
-look like this::
+So for example, the ``__plugin__`` variable for a ``HelloWorld`` plugin class
+could look like this::
 
     __plugin__ = "HelloWorld"
 
 
-To get a list of all available plugins you can use either
-``plugin_manager.plugins`` or ``get_plugins_list()`` which basically wraps
-the ``plugin_manager.plugins`` property. To get only one specific plugin,
-you can use ``get_plugin(name)``
+To get a list of all available plugins you can use ``get_plugins_list()`` and
+if you only only want to get one specific plugin, you can use
+``get_plugin(name)``.
 
 
-To make use of the ``install`` and ``uninstall`` methods, you need to implement
-them by yourself in your applications core because we are not bound to a
-database. **TODO:** Provide a example
+To make use of the :func:`Plugin.install` and :func:`Plugin.uninstall` methods,
+you need to implement them by yourself in your applications core
+because we are not bound to a database. So for example, if a plugin needs to
+alter or create a relation you can make use of the :func:`Plugin.install`
+method and to undo this, you can make use of :func:`Plugin.uninstall`.
 
 
 Events
@@ -105,14 +98,13 @@ We also provide a Event system out of the box. It is up to you if you want to
 extend your application with events. If you decide to use it, than you
 just need to add in specific places in your code the :func:`emit_event` function
 with the name of your event and optionally the data which can be modified by a
-plugin. After you have initilized the :class:`PluginManager` you can do this::
+plugin::
 
     from flask.ext.plugins import emit_event
 
     emit_event("before-data-rendered", data)
 
-and than you can add a callback (e.q. in your plugin setup method)
-to your newly created event::
+and than you can add a callback (e.q. in your plugin setup method)::
 
     from flask.ext.plugins import connect_event
 
@@ -138,7 +130,7 @@ The Plugin Class
 ================
 
 Every ``Plugin`` should implement this class. It is used to get plugin specific
-data and the :class:`PluginManager` tries call the methods which are stated below.
+data. and the :class:`PluginManager` tries call the methods which are stated below.
 
 .. autoclass:: Plugin
 

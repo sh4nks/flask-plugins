@@ -2,8 +2,8 @@
 
 # FLASK-PLUGINS
 
-Flask-Plugins provides an easy way to create plugins and add hooks for your
-application. It is also possible to create Hooks which can than be used to
+Flask-Plugins provides an easy way to create plugins for your
+application. It is also possible to create Events which can than be used to
 extend your application without the need to modify your core code.
 
 
