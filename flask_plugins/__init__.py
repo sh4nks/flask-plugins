@@ -43,6 +43,8 @@ class Plugin(object):
     def __init__(self, path):
         #: The plugin's root path. All the files in the plugin are under this
         #: path.
+        self.path = os.path.abspath(path)
+
         with open(os.path.join(path, 'info.json')) as fd:
             self.info = i = json.load(fd)
 
@@ -313,13 +315,12 @@ class EventManager(object):
         self._last_listener += 1
         return listener_id
 
-    def remove(self, listener_id):
+    def remove(self, event, callback):
         """Remove a callback again."""
-        for event in self._listeners:
-            try:
-                event.remove(listener_id)
-            except ValueError:
-                pass
+        try:
+            self._listeners[event].remove(callback)
+        except (KeyError, ValueError):
+            pass
 
     def iter(self, event):
         """Return an iterator for all listeners of a given name."""
@@ -334,7 +335,7 @@ class EventManager(object):
             rv = f(*args, **kwargs)
             if rv is not None:
                 results.append(rv)
-        return TemplateEventResult(results)
+        return Markup(TemplateEventResult(results))
 
 
 class TemplateEventResult(list):
@@ -347,7 +348,7 @@ class TemplateEventResult(list):
         list.__init__(self, items)
 
     def __unicode__(self):
-        return Markup(u''.join(map(unicode, self)))
+        return u''.join(map(unicode, self))
 
     def __str__(self):
-        return Markup(unicode(self).encode('utf-8'))
+        return unicode(self).encode('utf-8')
