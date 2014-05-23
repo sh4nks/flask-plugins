@@ -109,3 +109,38 @@ class PluginManagerOnePluginTests(unittest.TestCase):
         plugin = self.plugin_manager.plugins["Test One"]
         plugin.uninstall()
         self.assertTrue(plugin.uninstall_called)
+
+
+class PluginManagerManagementMethodsTests(unittest.TestCase):
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app.config['TESTING'] = True
+        self.plugin_manager = PluginManager()
+        self.plugin_manager.init_app(self.app)
+
+        # Call load_plugins to reload them without calling setup_plugins()
+        self.plugin_manager.load_plugins()
+
+    def test_setup_plugins(self):
+        plugin = self.plugin_manager.plugins["Test One"]
+        self.assertFalse(plugin.setup_called)
+
+        self.plugin_manager.setup_plugins()
+
+        self.assertTrue(plugin.setup_called)
+
+    def test_install_plugins(self):
+        plugin = self.plugin_manager.plugins["Test One"]
+        self.assertFalse(plugin.install_called)
+
+        self.plugin_manager.install_plugins()
+
+        self.assertTrue(plugin.install_called)
+
+    def test_uninstall_plugins(self):
+        plugin = self.plugin_manager.plugins["Test One"]
+        self.assertFalse(plugin.uninstall_called)
+
+        self.plugin_manager.uninstall_plugins()
+
+        self.assertTrue(plugin.uninstall_called)

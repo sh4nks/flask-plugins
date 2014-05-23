@@ -11,6 +11,10 @@ class TestOnePlugin(Plugin):
     license = "BSD"
     version = "1.0"
 
+    setup_called = False
+    install_called = False
+    uninstall_called = False
+
     def setup(self):
         self.setup_called = True
 
