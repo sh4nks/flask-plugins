@@ -22,8 +22,8 @@ like shown in the examples below.
 .. sourcecode:: text
 
     my_plugin
-    ├── info.json
-    └── __init__.py
+    |-- info.json
+    |-- __init__.py
 
 
 A more complex plugin could look like this:
@@ -31,16 +31,16 @@ A more complex plugin could look like this:
 .. sourcecode:: text
 
     my_plugin
-    ├── info.json                Contains the Plugin's metadata
-    ├── license.txt              The full license text of your plugin
-    ├── __init__.py              The plugin's main class is located here
-    ├── views.py
-    ├── models.py
-    ├── forms.py
-    ├── static
-    │   └── style.css
-    └── templates
-        └── myplugin.html
+    |-- info.json                Contains the Plugin's metadata
+    |-- license.txt              The full license text of your plugin
+    |-- __init__.py              The plugin's main class is located here
+    |-- views.py
+    |-- models.py
+    |-- forms.py
+    |-- static
+    |   |-- style.css
+    |-- templates
+        |-- myplugin.html
 
 
 The only way to disable a plugin without removing is, to add a ``DISABLED``
@@ -48,9 +48,9 @@ file in the plugin's root folder. You need to reload your application in order
 to have the plugin fully disabled. A disabled plugin could look like this::
 
     my_plugin
-    ├── DISABLED            # Just add a empty file named "DISABLED" to disable a plugin
-    ├── info.json
-    └── __init__.py
+    |-- DISABLED            # Just add a empty file named "DISABLED" to disable a plugin
+    |-- info.json
+    |-- __init__.py
 
 
 To add the extension to your application you simply can do this::
