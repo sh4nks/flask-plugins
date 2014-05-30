@@ -25,14 +25,19 @@ class PluginError(Exception):
     pass
 
 
-def get_plugin(name):
+def get_plugin(identifier):
     """Returns a plugin instance for the given name"""
-    return current_app.plugin_manager.plugins[name]
+    return current_app.plugin_manager.plugins[identifier]
 
 
 def get_plugins_list():
-    """Returns all plugins as a list"""
+    """Returns all enabled plugins as a list"""
     return current_app.plugin_manager.plugins.values()
+
+
+def get_all_plugins():
+    """Returns all plugins as a list including the disabled ones."""
+    return current_app.plugin_manager.all_plugins.values()
 
 
 class Plugin(object):
@@ -142,8 +147,14 @@ class PluginManager(object):
         :param base_app_folder: The base folder for the application. It is used
                                 to build the plugins package name.
         """
-        # All loaded plugins
+        # All enabled plugins
         self._plugins = None
+
+        # All plugins - including the disabled ones
+        self._all_plugins = None
+
+        # All available plugins including the disabled ones
+        self._available_plugins = dict()
 
         # All found plugins
         self._found_plugins = dict()
@@ -170,9 +181,16 @@ class PluginManager(object):
         self.setup_plugins()
 
     @property
+    def all_plugins(self):
+        """Returns all plugins including disabled ones."""
+        if self._all_plugins is None:
+            self.load_plugins()
+        return self._all_plugins
+
+    @property
     def plugins(self):
-        """Returns all loaded plugins as a dictionary. You still need to
-        enable them."""
+        """Returns all enabled plugins as a dictionary. You still need to
+        call the setup method to fully enable them."""
         if self._plugins is None:
             self.load_plugins()
         return self._plugins
@@ -183,6 +201,7 @@ class PluginManager(object):
         via self.plugins.
         """
         self._plugins = {}
+        self._all_plugins = {}
         for plugin_name, plugin_package in iteritems(self.find_plugins()):
 
             try:
@@ -201,16 +220,21 @@ class PluginManager(object):
             )
 
             plugin_instance = plugin_class(plugin_path)
-            self._plugins[plugin_instance.name] = plugin_instance
+
+            try:
+                if self._available_plugins[plugin_name]:
+                    self._plugins[plugin_instance.identifier] = plugin_instance
+            except KeyError:
+                pass
+
+            self._all_plugins[plugin_instance.identifier] = plugin_instance
 
     def find_plugins(self):
         """Find all possible plugins in the plugin folder."""
         for item in os.listdir(self.plugin_folder):
             if os.path.isdir(os.path.join(self.plugin_folder, item)) \
                     and os.path.exists(
-                        os.path.join(self.plugin_folder, item, "__init__.py")) \
-                    and not os.path.exists(
-                        os.path.join(self.plugin_folder, item, "DISABLED")):
+                        os.path.join(self.plugin_folder, item, "__init__.py")):
 
                 plugin = ".".join([self.base_plugin_package, item])
 
@@ -218,7 +242,17 @@ class PluginManager(object):
                 tmp = importlib.import_module(plugin)
 
                 try:
-                    self._found_plugins[tmp.__plugin__] = "{}".format(plugin)
+                    # Add the plugin to the available plugins if the plugin
+                    # isn't disabled
+                    if not os.path.exists(
+                            os.path.join(self.plugin_folder, item, "DISABLED")):
+
+                        self._available_plugins[tmp.__plugin__] = \
+                            "{}".format(plugin)
+
+                    self._found_plugins[tmp.__plugin__] = \
+                        "{}".format(plugin)
+
                 except AttributeError:
                     pass
 

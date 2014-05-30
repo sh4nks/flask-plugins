@@ -33,9 +33,9 @@ class PluginManagerTests(unittest.TestCase):
 
     def test_find_plugins(self):
         found_plugins = self.plugin_manager.find_plugins()
-        self.assertEqual(len(found_plugins), 2)
-        expected_plugins = ['TestOnePlugin', 'TestTwoPlugin']
-        self.assertEquals(sorted(found_plugins), expected_plugins)
+        self.assertEqual(len(found_plugins), 3)
+        expected_plugins = ['TestOnePlugin', 'TestTwoPlugin', 'TestThreePlugin']
+        self.assertEquals(sorted(found_plugins), sorted(expected_plugins))
 
     def test_load_plugins(self):
         self.plugin_manager._plugins = None
@@ -44,7 +44,12 @@ class PluginManagerTests(unittest.TestCase):
         self.plugin_manager.load_plugins()
 
         self.assertEquals(
-            sorted(self.plugin_manager.plugins.keys()), ["Test One", "Test Two"]
+            sorted(self.plugin_manager.plugins.keys()), ["test1", "test2"]
+        )
+
+        self.assertEquals(
+            sorted(self.plugin_manager.all_plugins.keys()),
+            ["test1", "test2", "test3"]
         )
 
 
@@ -67,9 +72,9 @@ class PluginManagerGetPlugins(unittest.TestCase):
 
     def test_get_plugin(self):
         with self.app.test_request_context():
-            plugin = get_plugin("Test One")
+            plugin = get_plugin("test1")
 
-        self.assertEquals(plugin, self.plugin_manager.plugins["Test One"])
+        self.assertEquals(plugin, self.plugin_manager.plugins["test1"])
 
 
 class PluginManagerOtherDirectoryTests(unittest.TestCase):
@@ -96,17 +101,17 @@ class PluginManagerOnePluginTests(unittest.TestCase):
         self.plugin_manager.load_plugins()
 
     def test_plugin_setup(self):
-        plugin = self.plugin_manager.plugins["Test One"]
+        plugin = self.plugin_manager.plugins["test1"]
         plugin.setup()
         self.assertTrue(plugin.setup_called)
 
     def test_plugin_install(self):
-        plugin = self.plugin_manager.plugins["Test One"]
+        plugin = self.plugin_manager.plugins["test1"]
         plugin.install()
         self.assertTrue(plugin.install_called)
 
     def test_plugin_uninstall(self):
-        plugin = self.plugin_manager.plugins["Test One"]
+        plugin = self.plugin_manager.plugins["test1"]
         plugin.uninstall()
         self.assertTrue(plugin.uninstall_called)
 
@@ -122,7 +127,7 @@ class PluginManagerManagementMethodsTests(unittest.TestCase):
         self.plugin_manager.load_plugins()
 
     def test_setup_plugins(self):
-        plugin = self.plugin_manager.plugins["Test One"]
+        plugin = self.plugin_manager.plugins["test1"]
         self.assertFalse(plugin.setup_called)
 
         self.plugin_manager.setup_plugins()
@@ -130,7 +135,7 @@ class PluginManagerManagementMethodsTests(unittest.TestCase):
         self.assertTrue(plugin.setup_called)
 
     def test_install_plugins(self):
-        plugin = self.plugin_manager.plugins["Test One"]
+        plugin = self.plugin_manager.plugins["test1"]
         self.assertFalse(plugin.install_called)
 
         self.plugin_manager.install_plugins()
@@ -138,7 +143,7 @@ class PluginManagerManagementMethodsTests(unittest.TestCase):
         self.assertTrue(plugin.install_called)
 
     def test_uninstall_plugins(self):
-        plugin = self.plugin_manager.plugins["Test One"]
+        plugin = self.plugin_manager.plugins["test1"]
         self.assertFalse(plugin.uninstall_called)
 
         self.plugin_manager.uninstall_plugins()
