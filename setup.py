@@ -45,7 +45,7 @@ from setuptools import setup
 
 setup(
     name='Flask-Plugins',
-    version='1.3',
+    version='1.4',
     url='http://github.com/sh4nks/flask-plugins/',
     license='BSD',
     author='sh4nks',

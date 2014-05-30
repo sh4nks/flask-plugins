@@ -26,8 +26,15 @@ class PluginError(Exception):
 
 
 def get_plugin(identifier):
-    """Returns a plugin instance for the given name"""
+    """Returns a plugin instance from the enabled plugins for the given name."""
     return current_app.plugin_manager.plugins[identifier]
+
+
+def get_plugin_from_all(identifier):
+    """Returns a plugin instance from all plugins (includes also the disabled
+    ones) for the given name.
+    """
+    return current_app.plugin_manager.all_plugins[identifier]
 
 
 def get_plugins_list():
@@ -43,7 +50,11 @@ def get_all_plugins():
 class Plugin(object):
     """Every plugin should implement this class. It handles the registration
     for the plugin hooks, creates or modifies additional relations or
-    registers plugin specific thinks"""
+    registers plugin specific thinks
+    """
+
+    #: If setup is called, this will be set to ``True``.
+    enabled = False
 
     def __init__(self, path):
         #: The plugin's root path. All the files in the plugin are under this
@@ -265,6 +276,7 @@ class PluginManager(object):
         for plugin in itervalues(self.plugins):
             with self.app.app_context():
                 plugin.setup()
+                plugin.enabled = True
 
     def install_plugins(self, plugins=None):
         """Install all or selected plugins.
