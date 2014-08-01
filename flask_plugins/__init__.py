@@ -182,7 +182,7 @@ class PluginManager(object):
         self.app = app
 
         if base_app_folder is None:
-            base_app_folder = self.app.root_path.split("/")[-1]
+            base_app_folder = self.app.root_path.split(os.sep)[-1]
 
         self.plugin_folder = os.path.join(self.app.root_path, plugin_folder)
         self.base_plugin_package = ".".join(
