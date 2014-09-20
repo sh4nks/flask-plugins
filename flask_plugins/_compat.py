@@ -10,6 +10,7 @@ if not PY2:  # pragma: no cover
     text_type = str
     string_types = (str,)
     integer_types = (int, )
+    intern_method = sys.intern
 
     iterkeys = lambda d: iter(d.keys())
     itervalues = lambda d: iter(d.values())
@@ -19,6 +20,7 @@ else:  # pragma: no cover
     text_type = unicode
     string_types = (str, unicode)
     integer_types = (int, long)
+    intern_method = intern
 
     iterkeys = lambda d: d.iterkeys()
     itervalues = lambda d: d.itervalues()
