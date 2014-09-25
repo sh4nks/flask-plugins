@@ -12,13 +12,13 @@
     :license: BSD, see LICENSE for more details.
 """
 import os
+import sys
 import importlib
 from collections import deque
-from werkzeug import cached_property
-from werkzeug.utils import import_string
+from werkzeug.utils import cached_property, import_string
 from jinja2 import Markup
 from flask import current_app, json
-from ._compat import itervalues, iteritems
+from ._compat import itervalues, iteritems, intern_method
 
 
 class PluginError(Exception):
@@ -351,7 +351,7 @@ class EventManager(object):
         """Connect a callback to an event."""
         assert position in ('before', 'after'), 'invalid position'
         listener_id = self._last_listener
-        event = intern(event)
+        event = intern_method(event)
         if event not in self._listeners:
             self._listeners[event] = deque([callback])
         elif position == 'after':
@@ -394,7 +394,10 @@ class TemplateEventResult(list):
         list.__init__(self, items)
 
     def __unicode__(self):
-        return u''.join(map(unicode, self))
+        return u''.join(map(str, self))
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
+        if sys.version_info[0] >= 3:
+            return self.__unicode__()
+        else:
+            return self.__unicode__().encode('utf-8')
