@@ -4,7 +4,7 @@ Flask-Plugins
 .. currentmodule:: flask.ext.plugins
 
 Flask-Plugins provides an easy way to create plugins for your
-application. It is also possible to create Events which can than be used to
+application. It is possible to create Events which can then be used to
 extend your application without the need to modify your core code.
 
 
@@ -15,8 +15,8 @@ extend your application without the need to modify your core code.
 
 Quickstart
 ==========
-A plugin has it's own folder where all the plugin specific files are living
-like shown in the examples below.
+A plugin has it's own folder where all the plugin files are residing
+like in the examples below.
 
 
 .. sourcecode:: text
@@ -44,8 +44,9 @@ A more complex plugin could look like this:
 
 
 The only way to disable a plugin without removing is, to add a ``DISABLED``
-file in the plugin's root folder. You need to reload your application in order
-to have the plugin fully disabled. A disabled plugin could look like this::
+file in the plugin's root folder. After that, you need to reload your
+application in order to have the plugin completely disabled.
+A disabled plugin could look like this::
 
     my_plugin
     |-- DISABLED            # Just add a empty file named "DISABLED" to disable a plugin
@@ -53,14 +54,15 @@ to have the plugin fully disabled. A disabled plugin could look like this::
     |-- __init__.py
 
 
-To add the extension to your application you simply can do this::
+There are two ways to add the extension to your application.
+The first one is to initalize it directly::
 
     from flask.ext.plugins import PluginManager
 
     plugin_manager = PluginManager(app)
 
 
-or if you are using the factory pattern::
+and the second one is to use the factory pattern::
 
     from flask.ext.plugins import PluginManager
 
@@ -79,23 +81,22 @@ could look like this::
     __plugin__ = "HelloWorld"
 
 
-To get a list of all available plugins you can use ``get_plugins_list()`` and
-if you only only want to get one specific plugin, you can use
-``get_plugin(name)``.
+To get a list of all available plugins you can use ``get_plugins_list()``.
+If you just want a specific plugin you can use ``get_plugin(name)``.
 
 
 To make use of the :func:`Plugin.install` and :func:`Plugin.uninstall` methods,
-you need to implement them by yourself in your applications core
-because we are not bound to a database. So for example, if a plugin needs to
-alter or create a relation you can make use of the :func:`Plugin.install`
-method and to undo this, you can make use of :func:`Plugin.uninstall`.
+you have to implement them by yourself in your applications core.
+For example, if a plugin needs to alter or create a relation you can make use
+of the :func:`Plugin.install` method and for the other way
+around use :func:`Plugin.uninstall`.
 
 
 Events
 ------
 
 We also provide a Event system out of the box. It is up to you if you want to
-extend your application with events. If you decide to use it, than you
+extend your application with events. If you decide to use it, then you
 just need to add in specific places in your code the :func:`emit_event` function
 with the name of your event and optionally the data which can be modified by a
 plugin::
@@ -114,9 +115,9 @@ and than you can add a callback (e.q. in your plugin setup method)::
     connect_event("before-data-rendered", do_before_data_rendered)
 
 
-Of course you also do that in your templates - For this we have already added
-:func:`emit_event` to your jinja env context. So you just need to call it in the
-template::
+Of course you can also do that in your templates - For this we have already
+added :func:`emit_event` to your jinja env context. So you just need to call it
+in the template::
 
     {{ emit_event("before-data-rendered") }}
 
@@ -178,6 +179,10 @@ Plugin System
 
 
 .. autofunction:: get_plugins_list
+
+.. autofunction:: get_all_plugins
+
+.. autofunction:: get_plugin_from_all
 
 .. autofunction:: get_plugin
 
