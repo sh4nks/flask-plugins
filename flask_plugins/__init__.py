@@ -221,8 +221,8 @@ class PluginManager(object):
                 )
             except ImportError:
                 raise PluginError(
-                    "Couldn't import {} Plugin. Please check if the __plugin__ "
-                    "variable is set correctly.".format(plugin_name)
+                    "Couldn't import {} Plugin. Please check if the "
+                    "__plugin__ variable is set correctly.".format(plugin_name)
                 )
 
             plugin_path = os.path.join(

@@ -1,5 +1,5 @@
 from flask import flash, Blueprint, render_template, render_template_string
-from flask.ext.plugins import connect_event
+from flask_plugins import connect_event
 from example.app import AppPlugin
 
 __plugin__ = "HelloWorld"

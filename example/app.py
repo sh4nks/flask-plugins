@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, current_app
 
-from flask.ext.plugins import PluginManager, get_plugins_list, get_plugin, \
+from flask_plugins import PluginManager, get_plugins_list, get_plugin, \
     Plugin, emit_event
 
 
