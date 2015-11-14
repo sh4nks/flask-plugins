@@ -166,29 +166,26 @@ class PluginManager(object):
 
         # All available plugins including the disabled ones
         self._available_plugins = dict()
+        self._unavailable_plugins = dict()
 
         # All found plugins
         self._found_plugins = dict()
-
+        self.plugin_paths = set()
         if app is not None:
             self.init_app(app, **kwargs)
 
     def init_app(self, app, base_app_folder=None, plugin_folder="plugins"):
         self._event_manager = EventManager(app)
-
         app.plugin_manager = self
         app.jinja_env.globals["emit_event"] = self._event_manager.template_emit
 
         self.app = app
 
-        if base_app_folder is None:
-            base_app_folder = self.app.root_path.split(os.sep)[-1]
 
         self.plugin_folder = os.path.join(self.app.root_path, plugin_folder)
         self.base_plugin_package = ".".join(
-            [base_app_folder, plugin_folder]
+            filter(None,[base_app_folder, plugin_folder])
         )
-
         self.setup_plugins()
 
     @property
@@ -213,59 +210,70 @@ class PluginManager(object):
         """
         self._plugins = {}
         self._all_plugins = {}
-        for plugin_name, plugin_package in iteritems(self.find_plugins()):
-
+        def import_plugin_from_string(s):
             try:
-                plugin_class = import_string(
-                    "{}.{}".format(plugin_package, plugin_name)
-                )
+                return import_string(s)
             except ImportError:
                 raise PluginError(
                     "Couldn't import {} Plugin. Please check if the "
-                    "__plugin__ variable is set correctly.".format(plugin_name)
+                    "__plugin__ variable is set correctly.".format(s)
                 )
-
+        with_class = ((pn,pp,import_plugin_from_string("{}.{}".format(pp, pn))) for pn,pp in iteritems(self.find_plugins()))
+        ready_to_sort = ((getattr(pc,"load_order",0),pn,pp,pc) for pn,pp,pc in with_class)
+        for order,plugin_name, plugin_package,plugin_class in sorted(ready_to_sort):
             plugin_path = os.path.join(
                 self.plugin_folder,
-                os.path.basename(plugin_package.replace(".", "/"))
+                plugin_package.replace(".","/").split("/",1)[-1]
             )
-
             plugin_instance = plugin_class(plugin_path)
-
             try:
                 if self._available_plugins[plugin_name]:
                     self._plugins[plugin_instance.identifier] = plugin_instance
             except KeyError:
                 pass
-
             self._all_plugins[plugin_instance.identifier] = plugin_instance
 
-    def find_plugins(self):
-        """Find all possible plugins in the plugin folder."""
-        for item in os.listdir(self.plugin_folder):
-            if os.path.isdir(os.path.join(self.plugin_folder, item)) \
-                    and os.path.exists(
-                        os.path.join(self.plugin_folder, item, "__init__.py")):
+    def find_plugins(self,start_path=None,import_string=None,recursive=True):
+        """
+        Find all possible plugins in the plugin folder.
 
-                plugin = ".".join([self.base_plugin_package, item])
+        :param start_path: the start path default to self.plugin_path if not supplied
+        :param import_string: the import string that points to the "start_path" folder, or defaults to self.base_plugin_package
+        :param recursive: default True
+        :return: dict of plugin names to plugins
+        """
 
-                # Same like from exammple.plugins.pluginname import __plugin__
-                tmp = importlib.import_module(plugin)
 
-                try:
-                    # Add the plugin to the available plugins if the plugin
-                    # isn't disabled
-                    if not os.path.exists(
-                            os.path.join(self.plugin_folder, item, "DISABLED")):
+        start_path = start_path if start_path and os.path.isdir(start_path) else self.plugin_folder
+        import_string = import_string if import_string else self.base_plugin_package
+        for item in os.listdir(start_path):
+            tmp_path = os.path.join(start_path, item)
+            if os.path.isdir(tmp_path):
+                    plugin = ".".join([import_string, item])
+                    if os.path.exists(os.path.join(tmp_path, "info.json")) or \
+                        os.path.exists(os.path.join(tmp_path, "__init__.py")):
+                        # Same like from exammple.plugins.pluginname import __plugin__
 
-                        self._available_plugins[tmp.__plugin__] = \
-                            "{}".format(plugin)
+                        tmp = importlib.import_module(plugin)
+                        if not hasattr(tmp,"__plugin__"):continue
+                        try:
+                            # Add the plugin to the available plugins if the plugin
+                            # isn't disabled
+                            if not os.path.exists(
+                                    os.path.join(tmp_path, "DISABLED")):
 
-                    self._found_plugins[tmp.__plugin__] = \
-                        "{}".format(plugin)
+                                self._available_plugins[tmp.__plugin__] = \
+                                    "{}".format(plugin)
 
-                except AttributeError:
-                    pass
+                            self._found_plugins[tmp.__plugin__] = \
+                                "{}".format(plugin)
+
+                        except AttributeError:
+                            raise
+
+                    elif recursive:
+                        self.find_plugins(tmp_path,plugin,recursive)
+
 
         return self._found_plugins
 
@@ -273,17 +281,30 @@ class PluginManager(object):
         """Runs the setup for all plugins. It is recommended to run this
         after the PluginManager has been initialized.
         """
-        for plugin in itervalues(self.plugins):
+        for plugin in sorted(itervalues(self.plugins),key=lambda x:(getattr(x,"load_order",0),x.name)):
             with self.app.app_context():
+                if not all(x in self.plugins for x in getattr(plugin,"required_plugins",[])):
+                    self._unavailable_plugins[plugin.identifier]=(plugin,
+                                                                  "Missing a required plugin for %s: Requires: %s"%(plugin.name,plugin.required_plugins),False)
+                    print("Unavailable: {0}".format(plugin.identifier))
+                    continue
                 plugin.setup()
                 plugin.enabled = True
-
+    def enable_plugins(self,*plugins):
+        """enable a list of plugins"""
+        for p in plugins:
+            p.enable()
+    def disable_plugins(self,*plugins):
+        """disable a list of plugins"""
+        for p in plugins:
+            p.disable()
     def install_plugins(self, plugins=None):
         """Install all or selected plugins.
 
         :param plugins: An iterable with plugins. If no plugins are passed
                         it will try to install all plugins.
         """
+
         for plugin in plugins or itervalues(self.plugins):
             with self.app.app_context():
                 plugin.install()
