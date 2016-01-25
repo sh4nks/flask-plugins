@@ -4,7 +4,7 @@ import unittest
 from jinja2 import Markup
 from flask import Flask
 
-from flask.ext.plugins import PluginManager, EventManager
+from flask_plugins import PluginManager, EventManager
 
 
 class EventManagerInitTests(unittest.TestCase):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    flask.ext.plugins
-    ~~~~~~~~~~~~~~~~~
+    flask_plugins
+    ~~~~~~~~~~~~~
 
     The Plugin class that every plugin should implement
 

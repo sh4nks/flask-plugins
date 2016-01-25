@@ -2,7 +2,7 @@ import os
 import unittest
 
 from flask import Flask
-from flask.ext.plugins import Plugin
+from flask_plugins import Plugin
 
 
 class PluginTestCase(unittest.TestCase):

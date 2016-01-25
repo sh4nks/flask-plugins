@@ -1,4 +1,4 @@
-from flask.ext.plugins import Plugin
+from flask_plugins import Plugin
 
 
 __plugin__ = "TestTwoPlugin"

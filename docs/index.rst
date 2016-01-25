@@ -1,7 +1,7 @@
 =============
 Flask-Plugins
 =============
-.. currentmodule:: flask.ext.plugins
+.. currentmodule:: flask_plugins
 
 Flask-Plugins provides an easy way to create plugins for your
 application. It is possible to create Events which can then be used to
