@@ -141,6 +141,38 @@ class Plugin(object):
         """
         pass
 
+    def enable(self):
+        """Enables the plugin by removing the 'DISABLED' file in the plugins
+        root directory, calls the ``setup()`` method and sets the plugin state
+        to true.
+        """
+        disabled_file = os.path.join(self.path, "DISABLED")
+        try:
+            if os.path.exists(disabled_file):
+                os.remove(disabled_file)
+                self.setup()
+                self.enabled = True
+        except:
+            raise
+        return self.enabled
+
+    def disable(self):
+        """Disablesthe plugin.
+
+        The app usually has to be restarted after this action because
+        plugins _can_ register blueprints and in order to "unregister" them,
+        the application object has to be destroyed.
+        This is a limitation of Flask and if you want to know more about this
+        visit this link: http://flask.pocoo.org/docs/0.10/blueprints/
+        """
+        disabled_file = os.path.join(plugin.path, "DISABLED")
+        try:
+            open(disabled_file, "a").close()
+            plugin.enabled = False
+        except:
+            raise
+        return plugin.enabled
+
     def install(self):  # pragma: no cover
         """Installs the things that must be installed in order to have a
         fully and correctly working plugin. For example, something that needs
@@ -311,6 +343,41 @@ class PluginManager(object):
         for plugin in plugins or itervalues(self.plugins):
             with self.app.app_context():
                 plugin.uninstall()
+
+    def enable_plugins(self, plugins=None):
+        """Enables one or more plugins.
+
+        It either returns the amount of enabled plugins or
+        raises an exception caused by ``os.remove`` which says most likely
+        that you can't write on the filesystem.
+
+        :param plugins: An iterable with plugins.
+        """
+        _enabled_count = 0
+        for plugin in plugins:
+            plugin.enable()
+            _enabled_count += 1
+        return _enabled_count
+
+    def disable_plugins(self, plugins=None):
+        """Disables one or more plugins.
+        It either returns the amount of disabled plugins or
+        raises an exception caused by ``open`` which says most likely
+        that you can't write on the filesystem.
+
+        The app usually has to be restarted after this action because
+        plugins **can** register blueprints and in order to "unregister" them,
+        the application object has to be destroyed.
+        This is a limitation of Flask and if you want to know more about this
+        visit this link: http://flask.pocoo.org/docs/0.10/blueprints/
+
+        :param plugins: An iterable with plugins
+        """
+        _disabled_count = 0
+        for plugin in plugins:
+            plugin.disable()
+            _disabled_count += 1
+        return _disabled_count
 
 
 def connect_event(event, callback, position='after'):
