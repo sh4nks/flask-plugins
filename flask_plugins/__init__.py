@@ -17,7 +17,15 @@ import importlib
 from collections import deque
 from werkzeug.utils import cached_property, import_string
 from jinja2 import Markup
-from flask import current_app, json
+from flask import json
+# Find the stack on which we want to store the database connection.
+# Starting with Flask 0.9, the _app_ctx_stack is the correct one,
+# before that we need to use the _request_ctx_stack.
+try:
+    from flask import _app_ctx_stack as stack
+except ImportError:
+    from flask import _request_ctx_stack as stack
+
 from ._compat import itervalues, iteritems, intern_method
 
 
@@ -26,25 +34,31 @@ class PluginError(Exception):
 
 
 def get_plugin(identifier):
-    """Returns a plugin instance from the enabled plugins for the given name."""
-    return current_app.plugin_manager.plugins[identifier]
+    """Returns a plugin instance from the enabled plugins for the given
+    name.
+    """
+    ctx = stack.top
+    return ctx.app.extensions.get('plugin_manager').plugins[identifier]
 
 
 def get_plugin_from_all(identifier):
     """Returns a plugin instance from all plugins (includes also the disabled
     ones) for the given name.
     """
-    return current_app.plugin_manager.all_plugins[identifier]
+    ctx = stack.top
+    return ctx.app.extensions.get('plugin_manager').all_plugins[identifier]
 
 
 def get_enabled_plugins():
     """Returns all enabled plugins as a list"""
-    return current_app.plugin_manager.plugins.values()
+    ctx = stack.top
+    return ctx.app.extensions.get('plugin_manager').plugins.values()
 
 
 def get_all_plugins():
     """Returns all plugins as a list including the disabled ones."""
-    return current_app.plugin_manager.all_plugins.values()
+    ctx = stack.top
+    return ctx.app.extensions.get('plugin_manager').all_plugins.values()
 
 
 class Plugin(object):
@@ -313,7 +327,10 @@ def connect_event(event, callback, position='after'):
             connect_event('before-metadata-assembled',
                            on_before_metadata_assembled)
     """
-    current_app.plugin_manager._event_manager.connect(event, callback, position)
+    ctx = stack.top
+    ctx.app.extensions.get('plugin_manager')._event_manager.connect(
+        event, callback, position
+    )
 
 
 def emit_event(event, *args, **kwargs):
@@ -326,13 +343,17 @@ def emit_event(event, *args, **kwargs):
         for listener in iter_listeners(event):
             result.append(listener(*args, **kwargs))
     """
-    return [x(*args, **kwargs) for x in
-            current_app.plugin_manager._event_manager.iter(event)]
+    ctx = stack.top
+    return [
+        x(*args, **kwargs) for x in
+        ctx.app.extensions.get('plugin_manager')._event_manager.iter(event)
+    ]
 
 
 def iter_listeners(event):
     """Return an iterator for all the listeners for the event provided."""
-    return current_app.plugin_manager._event_manager.iter(event)
+    ctx = stack.top
+    return ctx.app.extensions.get('plugin_manager')._event_manager.iter(event)
 
 
 class EventManager(object):
