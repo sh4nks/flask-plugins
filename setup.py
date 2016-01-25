@@ -10,7 +10,7 @@ extend your application without the need to modify your core code.
 And Easy to Setup
 `````````````````
 
-First you need to install it via:
+First of all, you have to install it:
 
 .. code:: bash
 
@@ -20,15 +20,15 @@ and then you need to initialize it somewhere in your code.
 
 .. code:: python
 
-    from flask.ext.plugins import PluginManager
+    from flask_plugins import PluginManager
 
     plugin_manager = PluginManager(app)
 
-It also supports the factory pattern for creating your app.
+Want to use the factory pattern? No problem!
 
 .. code:: python
 
-    from flask.ext.plugins import PluginManager
+    from flask_plugins import PluginManager
 
     plugin_manager = PluginManager()
     plugin_manager.init_app(app)
@@ -42,16 +42,28 @@ Resources
 
 """
 from setuptools import setup
+import re
+import ast
+
+
+def _get_version():
+    version_re = re.compile(r'__version__\s+=\s+(.*)')
+
+    with open('flask_plugins/__init__.py', 'rb') as fh:
+        version = ast.literal_eval(
+            version_re.search(fh.read().decode('utf-8')).group(1))
+
+    return str(version)
+
 
 setup(
     name='Flask-Plugins',
-    version='1.5',
-    url='http://github.com/sh4nks/flask-plugins/',
+    version=_get_version(),
+    url='https://github.com/sh4nks/flask-plugins',
     license='BSD',
-    author='sh4nks',
-    author_email='sh4nks7@gmail.com',
-    description=
-        'A Extension that makes it possible to create plugins in Flask.',
+    author='Peter Justin',
+    author_email='peter.justin@outlook.com',
+    description='Create plugins for your Flask application',
     long_description=__doc__,
     packages=['flask_plugins'],
     include_package_data=True,
@@ -66,11 +78,13 @@ setup(
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
+        'Framework :: Flask',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4'
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ]

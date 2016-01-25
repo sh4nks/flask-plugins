@@ -9,19 +9,19 @@ extend your application without the need to modify your core code.
 
 # INSTALLATION
 
-First you need to install it. It is available at the [Python Package Index](https://pypi.python.org/pypi/flask-plugins).
+First you need to install it. It is available on the [Python Package Index](https://pypi.python.org/pypi/flask-plugins).
 
     pip install flask-plugins
 
 and then you need to initialize it somewhere in your code.
 
-    from flask.ext.plugins import PluginManager
+    from flask_plugins import PluginManager
 
     plugin_manager = PluginManager()
 
 it also supports the factory pattern.
 
-    from flask.ext.plugins import PluginManager
+    from flask_plugins import PluginManager
 
     plugin_manager = PluginManager()
     plugin_manager.init_app(app)

@@ -28,6 +28,9 @@ except ImportError:
 
 from ._compat import itervalues, iteritems, intern_method
 
+__version__ = "1.6.0"
+__author__ = "Peter Justin"
+
 
 class PluginError(Exception):
     pass
@@ -94,11 +97,11 @@ class Plugin(object):
         #: This is a dictionary of localized versions of the description.
         #: The language codes are all lowercase, and the ``en`` key is
         #: preloaded with the base description.
-        self.localized_desc = dict(
+        self.description_lc = dict(
             (k.split('_', 1)[1].lower(), v) for k, v in i.items()
             if k.startswith('description_')
         )
-        self.localized_desc.setdefault('en', self.description)
+        self.description_lc.setdefault('en', self.description)
 
         #: The author's name, as given in info.json. This may or may not
         #: include their email, so it's best just to display it as-is.
@@ -174,15 +177,16 @@ class Plugin(object):
         return plugin.enabled
 
     def install(self):  # pragma: no cover
-        """Installs the things that must be installed in order to have a
-        fully and correctly working plugin. For example, something that needs
-        to be installed can be a relation and/or modify a existing relation.
+        """Installs the things that must be installed in order to
+        have a fully and correctly working plugin. For example, something that
+        needs to be installed can be a relation and/or modify a existing
+        relation.
         """
         pass
 
     def uninstall(self):  # pragma: no cover
-        """Uninstalls all the things which were previously installed by
-        `install()`. A Plugin must override this method.
+        """Uninstalls all the things which were previously
+        installed by `install()`. A Plugin must override this method.
         """
         pass
 
@@ -221,10 +225,12 @@ class PluginManager(object):
 
     def init_app(self, app, base_app_folder=None, plugin_folder="plugins"):
         self._event_manager = EventManager(app)
-
-        app.plugin_manager = self
         app.jinja_env.globals["emit_event"] = self._event_manager.template_emit
 
+        app.plugin_manager = self
+        if not hasattr(app, 'extensions'):
+            app.extensions = {}
+        app.extensions['plugin_manager'] = self
         self.app = app
 
         if base_app_folder is None:
@@ -302,7 +308,8 @@ class PluginManager(object):
                     # Add the plugin to the available plugins if the plugin
                     # isn't disabled
                     if not os.path.exists(
-                            os.path.join(self.plugin_folder, item, "DISABLED")):
+                            os.path.join(self.plugin_folder, item, "DISABLED")
+                    ):
 
                         self._available_plugins[tmp.__plugin__] = \
                             "{}".format(plugin)
@@ -316,16 +323,17 @@ class PluginManager(object):
         return self._found_plugins
 
     def setup_plugins(self):  # pragma: no cover
-        """Runs the setup for all plugins. It is recommended to run this
-        after the PluginManager has been initialized.
+        """Runs the setup for all enabled plugins. Should be run after the
+        PluginManager has been initialized. Sets the state of the plugin to
+        enabled.
         """
         for plugin in itervalues(self.plugins):
             with self.app.app_context():
-                plugin.setup()
                 plugin.enabled = True
+                plugin.setup()
 
     def install_plugins(self, plugins=None):
-        """Install all or selected plugins.
+        """Installs one or more plugins.
 
         :param plugins: An iterable with plugins. If no plugins are passed
                         it will try to install all plugins.
@@ -335,7 +343,7 @@ class PluginManager(object):
                 plugin.install()
 
     def uninstall_plugins(self, plugins=None):
-        """Uninstall the plugin.
+        """Uninstalls one or more plugins.
 
         :param plugins: An iterable with plugins. If no plugins are passed
                         it will try to uninstall all plugins.

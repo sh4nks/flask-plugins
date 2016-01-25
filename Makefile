@@ -25,5 +25,6 @@ sdist:
 
 develop:
 	    python setup.py develop
+
 test:
 	    nosetests --cover-package=flask_plugins --with-coverage

@@ -1,0 +1,26 @@
+Flask-Plugins Changelog
+=======================
+
+Here you can see the full list of changes between each Flask-Plugins release.
+
+Version 1.x.y
+-------------
+
+Released on TBD.
+
+
+Version 1.6.0
+-------------
+
+Released on January 25th, 2016
+
+- Documentation improvements
+- Adds `enable` and `disable` methods for plugins
+- BREAKING: The ``get_plugins_list()`` function got renamed to
+  ``get_enabled_plugins()``.
+
+
+Previous Versions
+=================
+
+Prior to 1.6.0, no proper changelog was kept.
