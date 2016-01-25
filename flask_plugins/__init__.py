@@ -37,7 +37,7 @@ def get_plugin_from_all(identifier):
     return current_app.plugin_manager.all_plugins[identifier]
 
 
-def get_plugins_list():
+def get_enabled_plugins():
     """Returns all enabled plugins as a list"""
     return current_app.plugin_manager.plugins.values()
 

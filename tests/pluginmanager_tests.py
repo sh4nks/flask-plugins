@@ -2,7 +2,7 @@
 import unittest
 
 from flask import Flask
-from flask.ext.plugins import PluginManager, PluginError, get_plugins_list, \
+from flask_plugins import PluginManager, PluginError, get_enabled_plugins, \
     get_plugin
 
 
@@ -63,7 +63,7 @@ class PluginManagerGetPlugins(unittest.TestCase):
 
     def test_get_plugins_list(self):
         with self.app.test_request_context():
-            plugins = get_plugins_list()
+            plugins = get_enabled_plugins()
 
         self.assertEquals(
             set(plugins),

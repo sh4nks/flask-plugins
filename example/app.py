@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, current_app
 
-from flask_plugins import PluginManager, get_plugins_list, get_plugin, \
+from flask_plugins import PluginManager, get_enabled_plugins, get_plugin, \
     Plugin, emit_event
 
 
@@ -26,7 +26,7 @@ plugin_manager = PluginManager(app)
 def index():
     emit_event("after_navigation")
 
-    return render_template("index.html", plugins=get_plugins_list())
+    return render_template("index.html", plugins=get_enabled_plugins())
 
 
 @app.route("/disable/<plugin>")
