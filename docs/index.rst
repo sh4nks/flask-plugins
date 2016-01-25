@@ -128,6 +128,40 @@ The directory structure of a disabled plugin is shown below.
     |-- info.json
     |-- __init__.py
 
+The server needs to be restarted in order to disable the plugin. This is a
+limitation of Flask. However, it is possible, to restart the application
+by sending a HUP signal to the application server. The following code snippets,
+are showing how this can be done with the WSGI server *gunicorn*. Gunicorn has
+be to started in daemon (``--daemon``) mode in order for this to work.
+
+.. sourcecode:: python
+
+    @app.route('/restart-server/')
+    def restart_server():
+      os.kill(os.getpid(), signal.SIGHUP)
+
+Which you can then call via a AJAX call.
+
+.. sourcecode:: javascript
+
+    function reload_server() {
+      // Reload Server
+      $.ajax({
+        url: "/reload-server/"
+      });
+      // Wait 1 second and reload page
+      setTimeout(function(){
+        window.location = document.URL;
+      }, 1000);
+    }
+
+This can then be called with a simple button (given you have included the JS
+file in your html template).
+
+.. sourcecode:: html
+
+    <button onclick='reload_server()'>Reload Server</button>
+
 
 Events
 ------
