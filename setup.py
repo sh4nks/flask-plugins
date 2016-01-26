@@ -2,9 +2,10 @@
 Flask-Plugins
 -------------
 
-Flask-Plugins provides an easy way to create plugins for your
-application. It is also possible to create Events which can than be used to
-extend your application without the need to modify your core code.
+Flask-Plugins makes it possible, to create plugins for your
+application. In addition to the plugin system, it also provides a simple
+event system which can be used by plugins to extend your application without
+the need to modify your core code.
 
 
 And Easy to Setup

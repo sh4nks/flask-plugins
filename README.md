@@ -29,7 +29,7 @@ it also supports the factory pattern.
 
 # DOCUMENTATION
 
-The documentation is located [here](http://flask-plugins.readthedocs.org/en/latest/).
+The documentation is located [here](https://flask-plugins.readthedocs.org/en/latest/).
 
 
 # LICENSE

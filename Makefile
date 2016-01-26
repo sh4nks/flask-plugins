@@ -5,7 +5,7 @@ help:
 	    @echo "  release     package and upload a release"
 	    @echo "  develop     make a development package"
 	    @echo "  sdist       package"
-	    @echo "  test	 run the tests"
+	    @echo "  test        run the tests"
 
 clean:
 	    find . -name '*.pyc' -exec rm -f {} +
@@ -13,7 +13,7 @@ clean:
 	    find . -name '*~' -exec rm -f {} +
 	    find . -name '.DS_Store' -exec rm -f {} +
 	    find . -name '__pycache__' -exec rm -rf {} +
-		find . -name '.coverage' -exec rm -rf {} +
+	    find . -name '.coverage' -exec rm -rf {} +
 
 release: register
 	    python setup.py sdist upload

@@ -238,7 +238,8 @@ about a plugin. The only really required fields are marked with **required**.
 ``license``
     A simple phrase indicating your plugin's license, like ``GPL``,
     ``MIT/X11``, ``Public Domain``, or ``Creative Commons BY-SA 3.0``. You
-    can put the full license's text in the ``license.txt`` file.
+    can put the full license's text, usually a ``LICENSE`` file, in the
+    plugins root directory.
 
 ``license_url``
     A URL pointing to the license text online.
