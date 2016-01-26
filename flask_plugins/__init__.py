@@ -28,7 +28,7 @@ except ImportError:
 
 from ._compat import itervalues, iteritems, intern_method
 
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 __author__ = "Peter Justin"
 
 

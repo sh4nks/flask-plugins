@@ -3,10 +3,19 @@ Changelog
 
 Here you can see the full list of changes between each Flask-Plugins release.
 
-Version 1.x.y
+
+Version 1.x.x
 -------------
 
 Released on TBD.
+
+
+Version 1.6.1
+-------------
+
+Released on January 26th, 2016
+
+- Do not call ``Plugin.setup()`` method in ``Plugin.enable()``.
 
 
 Version 1.6.0
