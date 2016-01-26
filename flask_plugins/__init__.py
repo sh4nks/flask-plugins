@@ -153,6 +153,8 @@ class Plugin(object):
         try:
             if os.path.exists(disabled_file):
                 os.remove(disabled_file)
+
+            if not self.enabled:
                 self.setup()
                 self.enabled = True
         except:
@@ -168,13 +170,13 @@ class Plugin(object):
         This is a limitation of Flask and if you want to know more about this
         visit this link: http://flask.pocoo.org/docs/0.10/blueprints/
         """
-        disabled_file = os.path.join(plugin.path, "DISABLED")
+        disabled_file = os.path.join(self.path, "DISABLED")
         try:
             open(disabled_file, "a").close()
-            plugin.enabled = False
+            self.enabled = False
         except:
             raise
-        return plugin.enabled
+        return self.enabled
 
     def install(self):  # pragma: no cover
         """Installs the things that must be installed in order to
