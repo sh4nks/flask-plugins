@@ -13,6 +13,7 @@ clean:
 	    find . -name '*~' -exec rm -f {} +
 	    find . -name '.DS_Store' -exec rm -f {} +
 	    find . -name '__pycache__' -exec rm -rf {} +
+		find . -name '.coverage' -exec rm -rf {} +
 
 release: register
 	    python setup.py sdist upload
