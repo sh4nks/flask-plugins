@@ -155,7 +155,6 @@ class Plugin(object):
                 os.remove(disabled_file)
 
             if not self.enabled:
-                self.setup()
                 self.enabled = True
         except:
             raise
