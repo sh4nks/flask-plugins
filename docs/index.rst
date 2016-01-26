@@ -302,3 +302,21 @@ Event System
 .. autofunction:: iter_listeners
 
 .. _example application: https://github.com/sh4nks/flask-plugins/tree/master/example
+
+
+.. Changelog
+.. =========
+
+.. include:: ../CHANGES
+
+
+License
+=======
+
+.. include:: ../LICENSE
+
+
+Authors
+=======
+
+.. include:: ../AUTHORS
