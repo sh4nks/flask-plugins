@@ -147,7 +147,7 @@ Which you can then call via a AJAX call.
     function reload_server() {
       // Reload Server
       $.ajax({
-        url: "/reload-server/"
+        url: "#/restart_server/"
       });
       // Wait 1 second and reload page
       setTimeout(function(){
