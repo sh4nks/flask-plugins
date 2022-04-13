@@ -16,7 +16,7 @@ import sys
 import importlib
 from collections import deque
 from werkzeug.utils import cached_property, import_string
-from jinja2 import Markup
+from markupsafe import Markup
 from flask import json
 # Find the stack on which we want to store the database connection.
 # Starting with Flask 0.9, the _app_ctx_stack is the correct one,
