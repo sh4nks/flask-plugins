@@ -8,13 +8,16 @@ Version 1.x.x
 
 Released on TBD.
 
-Version 1.6.2
+Version 1.7.0
 -------------
 
-Released on September 17th, 2025
+UNRELEASED
 
 - Import `Markup` from `MarkupSafe` instead of `Jinja2`.
 - Declare missing `MarkupSafe` and `Werkzeug` dependencies.
+- Modernize project setup (drop old python versions)
+- Drop support for Flask < 2
+
 
 Version 1.6.1
 -------------

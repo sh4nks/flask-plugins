@@ -1,36 +1,27 @@
-# -*- coding: utf-8 -*-
 """
-    flask_plugins
-    ~~~~~~~~~~~~~
+flask_plugins
+~~~~~~~~~~~~~
 
-    The Plugin class that every plugin should implement
+The Plugin class that every plugin should implement
 
-    The metadata part (with the info.json file) is inspired by Flask-Themes2
-    and the EventManager is taken from Zine.
+The metadata part (with the info.json file) is inspired by Flask-Themes2
+and the EventManager is taken from Zine.
 
-    :copyright: (c) 2014 by the FlaskBB Team.
-    :license: BSD, see LICENSE for more details.
+:copyright: (c) 2026 by the FlaskBB Team.
+:license: BSD, see LICENSE for more details.
 """
+
+import importlib
 import os
 import sys
-import importlib
 from collections import deque
-from werkzeug.utils import cached_property, import_string
-from markupsafe import Markup
-from flask import json
-# Find the stack on which we want to store the database connection.
-try:
-    # Flask >=0.9, <2.0
-    from flask import _app_ctx_stack as stack
-except ImportError:
-    try:
-        # Very old Flask (<0.9)
-        from flask import _request_ctx_stack as stack
-    except ImportError:
-        # Flask >=2.0: no private stacks, use g as a fallback
-        from flask import g as stack
 
-from ._compat import itervalues, iteritems, intern_method
+from flask import json
+from flask.app import Flask
+from flask.globals import current_app
+from markupsafe import Markup
+from werkzeug.utils import cached_property
+from werkzeug.utils import import_string
 
 __version__ = "1.6.2"
 __author__ = "Peter Justin"
@@ -44,31 +35,43 @@ def get_plugin(identifier):
     """Returns a plugin instance from the enabled plugins for the given
     name.
     """
-    ctx = stack.top
-    return ctx.app.extensions.get('plugin_manager').plugins[identifier]
+    pm = _get_pm()
+    if pm is None or pm.plugins is None:
+        return None
+
+    return pm.plugins[identifier]
 
 
 def get_plugin_from_all(identifier):
     """Returns a plugin instance from all plugins (includes also the disabled
     ones) for the given name.
     """
-    ctx = stack.top
-    return ctx.app.extensions.get('plugin_manager').all_plugins[identifier]
+    pm = _get_pm()
+    if pm is None or pm.all_plugins is None:
+        return None
+
+    return pm.all_plugins[identifier]
 
 
 def get_enabled_plugins():
     """Returns all enabled plugins as a list"""
-    ctx = stack.top
-    return ctx.app.extensions.get('plugin_manager').plugins.values()
+    pm = _get_pm()
+    if pm is None or pm.plugins is None:
+        return None
+
+    return pm.plugins.values()
 
 
 def get_all_plugins():
     """Returns all plugins as a list including the disabled ones."""
-    ctx = stack.top
-    return ctx.app.extensions.get('plugin_manager').all_plugins.values()
+    pm = _get_pm()
+    if pm is None or pm.all_plugins is None:
+        return None
+
+    return pm.all_plugins.values()
 
 
-class Plugin(object):
+class Plugin:
     """Every plugin should implement this class. It handles the registration
     for the plugin hooks, creates or modifies additional relations or
     registers plugin specific thinks
@@ -77,56 +80,57 @@ class Plugin(object):
     #: If setup is called, this will be set to ``True``.
     enabled = False
 
-    def __init__(self, path):
+    def __init__(self, path: str):
         #: The plugin's root path. All the files in the plugin are under this
         #: path.
-        self.path = os.path.abspath(path)
+        self.path: str = os.path.abspath(path)
 
-        with open(os.path.join(path, 'info.json')) as fd:
+        with open(os.path.join(path, "info.json")) as fd:
             self.info = i = json.load(fd)
 
         #: The plugin's name, as given in info.json. This is the human
         #: readable name.
-        self.name = i['name']
+        self.name: str = i["name"]
 
         #: The plugin's identifier. This is an actual Python identifier,
         #: and in most situations should match the name of the directory the
         #: plugin is in.
-        self.identifier = i['identifier']
+        self.identifier: str = i["identifier"]
 
         #: The human readable description. This is the default (English)
         #: version.
-        self.description = i.get('description')
+        self.description: str | None = i.get("description")
 
         #: This is a dictionary of localized versions of the description.
         #: The language codes are all lowercase, and the ``en`` key is
         #: preloaded with the base description.
-        self.description_lc = dict(
-            (k.split('_', 1)[1].lower(), v) for k, v in i.items()
-            if k.startswith('description_')
+        self.description_lc: dict[str, str | None] = dict(
+            (k.split("_", 1)[1].lower(), v)
+            for k, v in i.items()
+            if k.startswith("description_")
         )
-        self.description_lc.setdefault('en', self.description)
+        self.description_lc.setdefault("en", self.description)
 
         #: The author's name, as given in info.json. This may or may not
         #: include their email, so it's best just to display it as-is.
-        self.author = i['author']
+        self.author: str | None = i["author"]
 
         #: A short phrase describing the license, like "GPL", "BSD", "Public
         #: Domain", or "Creative Commons BY-SA 3.0".
-        self.license = i.get('license')
+        self.license: str | None = i.get("license")
 
         #: A URL pointing to the license text online.
-        self.license_url = i.get('license_url')
+        self.license_url: str | None = i.get("license_url")
 
         #: The URL to the plugin's or author's Web site.
-        self.website = i.get('website')
+        self.website: str | None = i.get("website")
 
         #: The plugin's version string.
-        self.version = i.get('version')
+        self.version: str | None = i.get("version")
 
         #: Any additional options. These are entirely application-specific,
         #: and may determine other aspects of the application's behavior.
-        self.options = i.get('options', {})
+        self.options: str | None = i.get("options", {})
 
     @cached_property
     def license_text(self):
@@ -135,7 +139,7 @@ class Plugin(object):
         used to display the full license text if necessary. (It is `None` if
         there was not a license.txt.)
         """
-        lt_path = os.path.join(self.path, 'license.txt')
+        lt_path = os.path.join(self.path, "license.txt")
         if os.path.exists(lt_path):
             with open(lt_path) as fd:
                 return fd.read()
@@ -196,10 +200,10 @@ class Plugin(object):
         pass
 
 
-class PluginManager(object):
+class PluginManager:
     """Collects all Plugins and maps the metadata to the plugin"""
 
-    def __init__(self, app=None, **kwargs):
+    def __init__(self, app: Flask | None = None, **kwargs):
         """Initializes the PluginManager. It is also possible to initialize the
         PluginManager via a factory. For example::
 
@@ -214,37 +218,33 @@ class PluginManager(object):
                                 to build the plugins package name.
         """
         # All enabled plugins
-        self._plugins = None
+        self._plugins: dict[str, Plugin] | None = None
 
         # All plugins - including the disabled ones
-        self._all_plugins = None
+        self._all_plugins: dict[str, Plugin] | None = None
 
         # All available plugins including the disabled ones
-        self._available_plugins = dict()
+        self._available_plugins: dict[str, str] = dict()
 
         # All found plugins
-        self._found_plugins = dict()
+        self._found_plugins: dict[str, str] = dict()
 
         if app is not None:
             self.init_app(app, **kwargs)
 
     def init_app(self, app, base_app_folder=None, plugin_folder="plugins"):
-        self._event_manager = EventManager(app)
+        self._event_manager = EventManager()
         app.jinja_env.globals["emit_event"] = self._event_manager.template_emit
 
-        app.plugin_manager = self
-        if not hasattr(app, 'extensions'):
+        if not hasattr(app, "extensions"):
             app.extensions = {}
-        app.extensions['plugin_manager'] = self
-        self.app = app
+        app.extensions["plugin_manager"] = self
 
         if base_app_folder is None:
-            base_app_folder = self.app.root_path.split(os.sep)[-1]
+            base_app_folder = app.root_path.split(os.sep)[-1]
 
-        self.plugin_folder = os.path.join(self.app.root_path, plugin_folder)
-        self.base_plugin_package = ".".join(
-            [base_app_folder, plugin_folder]
-        )
+        self.plugin_folder = os.path.join(app.root_path, plugin_folder)
+        self.base_plugin_package = ".".join([base_app_folder, plugin_folder])
 
         self.setup_plugins()
 
@@ -270,24 +270,20 @@ class PluginManager(object):
         """
         self._plugins = {}
         self._all_plugins = {}
-        for plugin_name, plugin_package in iteritems(self.find_plugins()):
-
+        for plugin_name, plugin_package in self.find_plugins().items():
             try:
-                plugin_class = import_string(
-                    "{}.{}".format(plugin_package, plugin_name)
-                )
-            except ImportError:
+                plugin_class = import_string(f"{plugin_package}.{plugin_name}")
+            except ImportError as e:
                 raise PluginError(
-                    "Couldn't import {} Plugin. Please check if the "
-                    "__plugin__ variable is set correctly.".format(plugin_name)
-                )
+                    f"Couldn't import {plugin_name} Plugin. Please check if the "
+                    "__plugin__ variable is set correctly."
+                ) from e
 
             plugin_path = os.path.join(
-                self.plugin_folder,
-                os.path.basename(plugin_package.replace(".", "/"))
+                self.plugin_folder, os.path.basename(plugin_package.replace(".", "/"))
             )
 
-            plugin_instance = plugin_class(plugin_path)
+            plugin_instance: Plugin = plugin_class(plugin_path)
 
             try:
                 if self._available_plugins[plugin_name]:
@@ -300,10 +296,9 @@ class PluginManager(object):
     def find_plugins(self):
         """Find all possible plugins in the plugin folder."""
         for item in os.listdir(self.plugin_folder):
-            if os.path.isdir(os.path.join(self.plugin_folder, item)) \
-                    and os.path.exists(
-                        os.path.join(self.plugin_folder, item, "__init__.py")):
-
+            if os.path.isdir(os.path.join(self.plugin_folder, item)) and os.path.exists(
+                os.path.join(self.plugin_folder, item, "__init__.py")
+            ):
                 plugin = ".".join([self.base_plugin_package, item])
 
                 # Same like from exammple.plugins.pluginname import __plugin__
@@ -313,14 +308,11 @@ class PluginManager(object):
                     # Add the plugin to the available plugins if the plugin
                     # isn't disabled
                     if not os.path.exists(
-                            os.path.join(self.plugin_folder, item, "DISABLED")
+                        os.path.join(self.plugin_folder, item, "DISABLED")
                     ):
+                        self._available_plugins[tmp.__plugin__] = f"{plugin}"
 
-                        self._available_plugins[tmp.__plugin__] = \
-                            "{}".format(plugin)
-
-                    self._found_plugins[tmp.__plugin__] = \
-                        "{}".format(plugin)
+                    self._found_plugins[tmp.__plugin__] = f"{plugin}"
 
                 except AttributeError:
                     pass
@@ -332,32 +324,52 @@ class PluginManager(object):
         PluginManager has been initialized. Sets the state of the plugin to
         enabled.
         """
-        for plugin in itervalues(self.plugins):
-            with self.app.app_context():
-                plugin.enabled = True
-                plugin.setup()
+        if not self.plugins:
+            return
 
-    def install_plugins(self, plugins=None):
+        for plugin in self.plugins.values():
+            plugin.enabled = True
+            plugin.setup()
+
+    def install_plugins(self, plugins: dict[str, Plugin] | None = None):
         """Installs one or more plugins.
 
         :param plugins: An iterable with plugins. If no plugins are passed
                         it will try to install all plugins.
         """
-        for plugin in plugins or itervalues(self.plugins):
-            with self.app.app_context():
+        if not self.plugins and not plugins:
+            return
+
+        values = []
+        if plugins:
+            values = plugins.values()
+        elif self.plugins:
+            values = self.plugins.values()
+
+        for plugin in values:
+            with current_app.app_context():
                 plugin.install()
 
-    def uninstall_plugins(self, plugins=None):
+    def uninstall_plugins(self, plugins: dict[str, Plugin] | None = None):
         """Uninstalls one or more plugins.
 
         :param plugins: An iterable with plugins. If no plugins are passed
                         it will try to uninstall all plugins.
         """
-        for plugin in plugins or itervalues(self.plugins):
-            with self.app.app_context():
+        if not self.plugins and not plugins:
+            return
+
+        values = []
+        if plugins:
+            values = plugins.values()
+        elif self.plugins:
+            values = self.plugins.values()
+
+        for plugin in values:
+            with current_app.app_context():
                 plugin.uninstall()
 
-    def enable_plugins(self, plugins=None):
+    def enable_plugins(self, plugins: list[Plugin] | None = None):
         """Enables one or more plugins.
 
         It either returns the amount of enabled plugins or
@@ -367,12 +379,12 @@ class PluginManager(object):
         :param plugins: An iterable with plugins.
         """
         _enabled_count = 0
-        for plugin in plugins:
+        for plugin in plugins or []:
             plugin.enable()
             _enabled_count += 1
         return _enabled_count
 
-    def disable_plugins(self, plugins=None):
+    def disable_plugins(self, plugins: list[Plugin] | None = None):
         """Disables one or more plugins.
         It either returns the amount of disabled plugins or
         raises an exception caused by ``open`` which says most likely
@@ -387,13 +399,13 @@ class PluginManager(object):
         :param plugins: An iterable with plugins
         """
         _disabled_count = 0
-        for plugin in plugins:
+        for plugin in plugins or []:
             plugin.disable()
             _disabled_count += 1
         return _disabled_count
 
 
-def connect_event(event, callback, position='after'):
+def connect_event(event, callback, position="after"):
     """Connect a callback to an event.  Per default the callback is
     appended to the end of the handlers but handlers can ask for a higher
     privilege by setting `position` to ``'before'``.
@@ -407,10 +419,11 @@ def connect_event(event, callback, position='after'):
             connect_event('before-metadata-assembled',
                            on_before_metadata_assembled)
     """
-    ctx = stack.top
-    ctx.app.extensions.get('plugin_manager')._event_manager.connect(
-        event, callback, position
-    )
+    em = _get_em()
+    if em is None:
+        return iter(())
+
+    em.connect(event, callback, position)
 
 
 def emit_event(event, *args, **kwargs):
@@ -423,41 +436,42 @@ def emit_event(event, *args, **kwargs):
         for listener in iter_listeners(event):
             result.append(listener(*args, **kwargs))
     """
-    ctx = stack.top
-    return [
-        x(*args, **kwargs) for x in
-        ctx.app.extensions.get('plugin_manager')._event_manager.iter(event)
-    ]
+    em = _get_em()
+    if em is None:
+        return iter(())
+
+    return [x(*args, **kwargs) for x in em.iter(event)]
 
 
 def iter_listeners(event):
     """Return an iterator for all the listeners for the event provided."""
-    ctx = stack.top
-    return ctx.app.extensions.get('plugin_manager')._event_manager.iter(event)
+    em = _get_em()
+    if em is None:
+        return iter(())
+    return em.iter(event)
 
 
-class EventManager(object):
+class EventManager:
     """Helper class that handles event listeners and event emitting.
 
     This is *not* a public interface. Always use the `emit_event` or
     `connect_event` or the `iter_listeners` functions to access it.
     """
 
-    def __init__(self, app):
-        self.app = app
+    def __init__(self):
         self._listeners = {}
         self._last_listener = 0
 
-    def connect(self, event, callback, position='after'):
+    def connect(self, event, callback, position="after"):
         """Connect a callback to an event."""
-        assert position in ('before', 'after'), 'invalid position'
+        assert position in ("before", "after"), "invalid position"
         listener_id = self._last_listener
-        event = intern_method(event)
+        event = sys.intern(event)
         if event not in self._listeners:
             self._listeners[event] = deque([callback])
-        elif position == 'after':
+        elif position == "after":
             self._listeners[event].append(callback)
-        elif position == 'before':
+        elif position == "before":
             self._listeners[event].appendleft(callback)
         self._last_listener += 1
         return listener_id
@@ -495,10 +509,34 @@ class TemplateEventResult(list):
         list.__init__(self, items)
 
     def __unicode__(self):
-        return u''.join(map(str, self))
+        return "".join(map(str, self))
 
     def __str__(self):
-        if sys.version_info[0] >= 3:
-            return self.__unicode__()
-        else:
-            return self.__unicode__().encode('utf-8')
+        return self.__unicode__()
+
+
+def _get_pm(app: Flask | None = None, silent: bool = False) -> PluginManager | None:
+    """Gets the application-specific Plugin Manager.
+
+    :param app: The Flask application. Defaults to the current app.
+    :param silent: If set to True, it will return ``None`` instead of raising
+                   a ``RuntimeError``.
+    """
+    if app is None:
+        app = current_app
+
+    if silent and (not app or "plugin_manager" not in app.extensions):
+        return None
+
+    if "plugin_manager" not in app.extensions:
+        raise RuntimeError("Flask-Plugins not configured against current app")
+
+    return app.extensions["plugin_manager"]
+
+
+def _get_em(app: Flask | None = None) -> EventManager | None:
+    pm = _get_pm(app)
+    if pm is None:
+        return None
+
+    return pm._event_manager
