@@ -3,20 +3,17 @@ Changelog
 
 Here you can see the full list of changes between each Flask-Plugins release.
 
-Version 1.x.x
--------------
-
-Released on TBD.
-
-Version 1.7.0
+Version 2.0.0
 -------------
 
 UNRELEASED
 
 - Import `Markup` from `MarkupSafe` instead of `Jinja2`.
 - Declare missing `MarkupSafe` and `Werkzeug` dependencies.
-- Modernize project setup (drop old python versions)
-- Drop support for Flask < 2
+- Modernize project setup and switch to `uv`.
+- Drop support for `Python < 3.10`.
+- Drop support for `Flask < 2`.
+- Use `pytest` for the tests.
 
 
 Version 1.6.1

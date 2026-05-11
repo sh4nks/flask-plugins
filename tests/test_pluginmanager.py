@@ -59,7 +59,7 @@ def test_get_enabled_plugins(app):
 
 
 def test_get_all_plugins(app):
-    plugin_manager = PluginManager(app)
+    PluginManager(app)
     with app.test_request_context():
         plugins = get_all_plugins()
     assert len(plugins) == 3
@@ -73,7 +73,7 @@ def test_get_plugin(app):
 
 
 def test_get_plugin_from_all(app):
-    plugin_manager = PluginManager(app)
+    PluginManager(app)
     with app.test_request_context():
         plugin = get_plugin_from_all("test3")
     assert not plugin.enabled

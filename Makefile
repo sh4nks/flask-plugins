@@ -2,10 +2,10 @@
 
 help:
 	@echo "  clean           remove unwanted files"
-	@echo "  sdist           build source distribution"
+	@echo "  build           build source + wheel distribution"
 	@echo "  release         build and upload to PyPI"
 	@echo "  release-test    build and upload to TestPyPI"
-	@echo "  develop         install package in editable mode"
+	@echo "  docs            build docs"
 	@echo "  test            run tests with pytest"
 
 clean:
@@ -16,17 +16,17 @@ clean:
 	find . -name '__pycache__' -exec rm -rf {} +
 	find . -name '.coverage' -exec rm -rf {} +
 
-sdist:
-	python -m build --sdist
+build:
+    uv build
 
-release: sdist
-	twine upload dist/*
+release: build
+	twine upload --skip-existing dist/{*.tar.gz,*.whl}
 
-release-test: sdist
-	twine upload --repository testpypi dist/*
+release-test: build
+	twine upload --repository testpypi --skip-existing dist/{*.tar.gz,*.whl}
 
-develop:
-	pip install -e .
+docs:
+    uv run sphinx-build -E -W -b html docs docs/_build/
 
 test:
-	pytest
+	uv run tox

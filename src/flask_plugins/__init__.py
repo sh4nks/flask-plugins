@@ -23,7 +23,7 @@ from markupsafe import Markup
 from werkzeug.utils import cached_property
 from werkzeug.utils import import_string
 
-__version__ = "1.6.2"
+__version__ = "2.0.0"
 __author__ = "Peter Justin"
 
 
