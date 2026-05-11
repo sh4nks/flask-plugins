@@ -307,7 +307,7 @@ Event System
 .. Changelog
 .. =========
 
-.. include:: ../CHANGES
+.. include:: ../CHANGES.rst
 
 
 License

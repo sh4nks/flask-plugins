@@ -1,17 +1,21 @@
-from flask import flash, Blueprint, render_template, render_template_string
-from flask_plugins import connect_event
+from flask import Blueprint
+from flask import flash
+from flask import render_template
+from flask import render_template_string
+
 from example.app import AppPlugin
+from flask_plugins import connect_event
 
 __plugin__ = "HelloWorld"
 __version__ = "1.0.0"
 
 
 def hello_world():
-    flash("Hello World from {} Plugin".format(__plugin__), "success")
+    flash(f"Hello World from {__plugin__} Plugin", "success")
 
 
 def hello_world2():
-    flash("Hello World 2 from {} Plugin".format(__plugin__), "success")
+    flash(f"Hello World 2 from {__plugin__} Plugin", "success")
 
 
 def inject_hello_world():
@@ -26,7 +30,8 @@ def inject_navigation_link():
     return render_template_string(
         """
             <li><a href="{{ url_for('hello.index') }}">Hello</a></li>
-        """)
+        """
+    )
 
 
 hello = Blueprint("hello", __name__, template_folder="templates")
@@ -38,7 +43,6 @@ def index():
 
 
 class HelloWorld(AppPlugin):
-
     def setup(self):
         self.register_blueprint(hello, url_prefix="/hello")
 

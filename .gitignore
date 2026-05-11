@@ -50,3 +50,7 @@ flaskbb/configs/development.py
 DISABLED
 
 dist/
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.tox

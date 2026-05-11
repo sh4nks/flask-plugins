@@ -1,7 +1,14 @@
-from flask import Flask, render_template, redirect, url_for, current_app
+from flask import current_app
+from flask import Flask
+from flask import redirect
+from flask import render_template
+from flask import url_for
 
-from flask_plugins import PluginManager, get_enabled_plugins, get_plugin, \
-    Plugin, emit_event
+from flask_plugins import emit_event
+from flask_plugins import get_enabled_plugins
+from flask_plugins import get_plugin
+from flask_plugins import Plugin
+from flask_plugins import PluginManager
 
 
 # to demonstrate how easy it is to create your own plugin class for your plugins

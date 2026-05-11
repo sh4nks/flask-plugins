@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/sh4nks/flask-plugins.svg?branch=master)](https://travis-ci.org/sh4nks/flask-plugins) [![Coverage Status](https://coveralls.io/repos/sh4nks/flask-plugins/badge.png)](https://coveralls.io/r/sh4nks/flask-plugins)
+[![Build Status](https://github.com/sh4nks/flask-plugins/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/sh4nks/flask-plugins/actions/workflows/ci.yml)
 
 # FLASK-PLUGINS
 

@@ -3,7 +3,7 @@ from flask_plugins import Plugin
 __plugin__ = "WrongPluginClass"
 
 
-class TestWrongPlugin(Plugin):
+class WrongPlugin(Plugin):
     name = "Test Wrong"
     description = "Test Wrong description"
     author = "test1"
