@@ -26,7 +26,7 @@ extlinks = {
 
 project = "Flask-Plugins"
 copyright = "2014, sh4nks"
-release, version = release, version = get_version("flask_plugins")
+release, version = get_version("flask_plugins")
 
 intersphinx_mapping = {"python": ("https://docs.python.org/3/", None)}
 

@@ -1,13 +1,13 @@
 [![Build Status](https://github.com/sh4nks/flask-plugins/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/sh4nks/flask-plugins/actions/workflows/ci.yml)
 
-# FLASK-PLUGINS
+# Flask-Plugins
 
 Flask-Plugins provides an easy way to create plugins for your
 application. It is also possible to create Events which can than be used to
 extend your application without the need to modify your core code.
 
 
-# INSTALLATION
+# Installation
 
 First you need to install it. It is available on the [Python Package Index](https://pypi.python.org/pypi/flask-plugins).
 
@@ -27,11 +27,11 @@ it also supports the factory pattern.
     plugin_manager.init_app(app)
 
 
-# DOCUMENTATION
+# Documentation
 
 The documentation is located [here](https://flask-plugins.readthedocs.org/en/latest/).
 
 
-# LICENSE
+# License
 
-[BSD LICENSE](http://flask.pocoo.org/docs/license/#flask-license)
+[BSD License](./LICENSE)
