@@ -6,7 +6,7 @@ Here you can see the full list of changes between each Flask-Plugins release.
 Version 2.0.0
 -------------
 
-UNRELEASED
+Released on May 11th, 2026
 
 - Import `Markup` from `MarkupSafe` instead of `Jinja2`.
 - Declare missing `MarkupSafe` and `Werkzeug` dependencies.
